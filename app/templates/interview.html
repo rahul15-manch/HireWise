@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview - HireWise</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background-color: #202124;
+            color: white;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .pdf-side {
+            flex: 1.2;
+            background: #333;
+            border-right: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-side iframe {
+            flex: 1;
+            border: none;
+        }
+
+        .interview-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .interview-container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .question-box {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            min-height: 100px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .visualizer {
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .bar {
+            width: 5px;
+            height: 10px;
+            background-color: #4285f4;
+            animation: sound 0.5s infinite;
+            animation-play-state: paused;
+        }
+
+        @keyframes sound {
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 40px;
+            }
+
+            100% {
+                height: 10px;
+            }
+        }
+
+        .recording .bar {
+            animation-play-state: running;
+        }
+
+        #status {
+            color: #aaa;
+            margin-bottom: 1rem;
+        }
+
+        .start-btn {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .start-btn:hover {
+            background: #218838;
+        }
+
+        .pdf-header {
+            padding: 10px;
+            background: #202124;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        .pdf-header a {
+            color: #4285f4;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-wrapper">
+        {% if interview.pdf_file %}
+        <div class="pdf-side">
+            <div class="pdf-header">
+                <span>Assessment PDF</span>
+                <a href="/static/uploads/{{ interview.pdf_file }}" target="_blank">Open in new tab</a>
+            </div>
+            <iframe src="/static/uploads/{{ interview.pdf_file }}"></iframe>
+        </div>
+        {% endif %}
+
+        <div class="interview-side">
+            <div class="interview-container" id="welcome-screen">
+                <h1>Interview for {{ interview.job_role }}</h1>
+                <p>Difficulty: {{ interview.difficulty }}</p>
+
+                {% if not interview.pdf_file %}
+                <p>This is a voice-enabled interview. The AI will ask you questions, and you will speak your answers.
+                </p>
+                {% else %}
+                <p>Please review the assessment on the left. When you are ready, click "Start Interview" to begin the
+                    voice session.</p>
+                {% endif %}
+
+                <button class="start-btn" onclick="startInterview()">Start Interview</button>
+            </div>
+
+            <div class="interview-container" id="interview-screen" style="display: none;">
+                <div id="status">Listening...</div>
+
+                <div class="visualizer" id="visualizer">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+
+                <div class="question-box" id="question-text">
+                    Initializing...
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <textarea id="answer-input"
+                        placeholder="Your answer will appear here. You can also type manually..."
+                        style="width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #333; color: white; resize: none; font-size: 1rem;"></textarea>
+                </div>
+
+                <div style="font-size: 0.8rem; color: #888; margin-bottom: 1rem;">
+                    <span id="voice-indicator">Click "Start Interview" to begin.</span>
+                </div>
+
+                <div class="controls">
+                    <button id="next-btn" onclick="nextQuestion()" style="display:none; padding: 0.5rem 2rem;"
+                        class="start-btn">Next Question</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const interviewId = {{ interview.id }};
+        const questions = JSON.parse('{{ interview.questions | safe }}');
+        let currentQIndex = 0;
+        let recognition;
+        let synth = window.speechSynthesis;
+        let finalTranscript = '';
+
+        function startInterview() {
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('interview-screen').style.display = 'block';
+
+            // Setup Speech Recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                    document.getElementById('answer-input').value = finalTranscript + interimTranscript;
+                };
+
+                recognition.onend = () => {
+                    // If recognition stops unexpectedly, we can restart it if we're still listening
+                    if (document.getElementById('status').textContent === "Listening...") {
+                        try { recognition.start(); } catch(e) {}
+                    }
+                };
+            } else {
+                alert("Browser does not support Speech API. Please use Chrome.");
+            }
+
+            speakQuestion(questions[0]);
+        }
+
+        function speakQuestion(text) {
+            document.getElementById('question-text').textContent = text;
+            document.getElementById('status').textContent = "AI Speaking...";
+            document.getElementById('visualizer').classList.remove('recording');
+            document.getElementById('voice-indicator').textContent = "AI is asking a question...";
+            document.getElementById('next-btn').style.display = 'none';
+            
+            // Clear previous answer for new question
+            document.getElementById('answer-input').value = "";
+            finalTranscript = "";
+
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.onend = () => {
+                document.getElementById('status').textContent = "Listening...";
+                document.getElementById('visualizer').classList.add('recording');
+                document.getElementById('voice-indicator').textContent = "You can speak now or type your answer above.";
+                if (recognition) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.log("Recognition already started");
+                    }
+                }
+                document.getElementById('next-btn').style.display = 'inline-block';
+            };
+            synth.speak(utter);
+        }
+
+        async function nextQuestion() {
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {}
+            }
+            document.getElementById('visualizer').classList.remove('recording');
+            document.getElementById('next-btn').style.display = 'none';
+
+            // Submit Answer (Prefer typed content in textarea)
+            const answer = document.getElementById('answer-input').value;
+            await fetch(`/interview/${interviewId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question_index: currentQIndex, answer: answer })
+            });
+
+            currentQIndex++;
+
+            if (currentQIndex < questions.length) {
+                speakQuestion(questions[currentQIndex]);
+            } else {
+                document.getElementById('question-text').textContent = "Interview Completed. Processing results...";
+                document.getElementById('status').textContent = "Please wait...";
+                document.getElementById('answer-input').style.display = 'none';
+                document.getElementById('voice-indicator').style.display = 'none';
+
+                await fetch(`/interview/${interviewId}/complete`, { method: 'POST' });
+                window.location.href = '/dashboard';
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | HireWise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --hw-blue: #0077b5;
+            --li-bg: #f3f2ef;
+            --li-border: #e0e0e0;
+            --li-text: #000000;
+            --li-text-secondary: #666666;
+            --li-card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--li-bg);
+            color: var(--li-text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .login-card {
+            background: var(--li-card-bg);
+            width: 400px;
+            padding: 2.5rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--li-border);
+            text-align: center;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Brand Logo */
+        .logo-container {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .brand-logo {
+            max-width: 250px;
+            height: auto;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: var(--li-text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form Styling */
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--li-text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--hw-blue);
+            box-shadow: 0 0 0 1px var(--hw-blue);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--hw-blue);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #005a8a;
+        }
+
+        .error {
+            background: #fff3f3;
+            color: #d9534f;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            border: 1px solid #f2dede;
+        }
+
+        .auth-link {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--li-text-secondary);
+        }
+
+        .auth-link a {
+            color: var(--hw-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="logo-container">
+            <img src="/static/img/logo.png" alt="HireWise Logo" class="brand-logo">
+        </div>
+
+        <h2>Sign in</h2>
+        <p class="subtitle">Accelerate your hiring with AI assessments</p>
+
+        {% if error %}
+        <div class="error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="post">
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Sign in</button>
+        </form>
+
+        <div class="auth-link">
+            New to HireWise? <a href="/signup">Join now</a>
+        </div>
+    </div>
+</body>
+
+</html>

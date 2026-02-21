@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | HireWise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --hw-blue: #0077b5;
+            --li-bg: #f3f2ef;
+            --li-border: #e0e0e0;
+            --li-text: #000000;
+            --li-text-secondary: #666666;
+            --li-card-bg: #ffffff;
+            --li-hover: #f0f7ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
+            background-color: var(--li-bg);
+            color: var(--li-text);
+            line-height: 1.5;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: white;
+            padding: 0.75rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--li-border);
+            display: flex;
+            justify-content: center;
+        }
+
+        .nav-content {
+            width: 100%;
+            max-width: 1128px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-logo img {
+            height: 80px;
+            width: auto;
+        }
+
+        .nav-items {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--li-text-secondary);
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .nav-link:hover {
+            color: var(--li-text);
+        }
+
+        .nav-link.active {
+            color: var(--li-text);
+            border-bottom: 2px solid var(--li-text);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 1.75rem;
+            padding: 0 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .left-aside {
+                display: none;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--li-card-bg);
+            border: 1px solid var(--li-border);
+            border-radius: 14px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Profile Card (Left) */
+        .profile-card {
+            text-align: center;
+        }
+
+        .profile-header {
+            height: 54px;
+            background: #a0b4b7;
+        }
+
+        .profile-info {
+            padding: 0 1rem 1rem;
+            margin-top: -30px;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid white;
+            margin: 0 auto 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--li-blue);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .profile-role {
+            font-size: 0.75rem;
+            color: var(--li-text-secondary);
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--li-border);
+            padding-bottom: 1rem;
+        }
+
+        .profile-stats {
+            text-align: left;
+            padding-top: 0.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 0.25rem 0;
+            color: var(--li-text-secondary);
+        }
+
+        .stat-value {
+            color: var(--li-blue);
+            font-weight: 600;
+        }
+
+        /* Create Interview Card (Center) */
+        .create-box {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .create-box-header {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .input-placeholder {
+            flex-grow: 1;
+            padding: 0.85rem 1.25rem;
+            border: 1px solid var(--li-border);
+            border-radius: 35px;
+            background: #f8f9fa;
+            color: var(--li-text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.2s, border-color 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .input-placeholder:hover {
+            background: #ebebeb;
+            border-color: #bbb;
+        }
+
+        /* Interview Feed (Center) */
+        .feed-item {
+            padding: 0;
+        }
+
+        .feed-empty {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--li-text-secondary);
+        }
+
+        .feed-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .feed-actor {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .actor-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .actor-info p {
+            font-size: 0.78rem;
+            color: var(--li-text-secondary);
+            margin-top: 1px;
+        }
+
+        .feed-content {
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .interview-details {
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 0.2rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #e2f0fe;
+            color: #0056b3;
+        }
+
+        .status-cleared {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .feed-actions {
+            border-top: 1px solid var(--li-border);
+            display: flex;
+            padding: 4px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            color: var(--li-text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #ebebeb;
+        }
+
+        /* Form Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 552px;
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--li-border);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--li-text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--li-text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #666;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .submit-btn {
+            background: var(--li-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            float: right;
+            margin-top: 1rem;
+        }
+
+        /* Right Aside */
+        .news-card {
+            padding: 1rem;
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .news-item {
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .news-item h5 {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .news-item p {
+            color: var(--li-text-secondary);
+            font-size: 0.75rem;
+        }
+
+        /* Q&A / Evaluation Expandable */
+        .expand-section {
+            display: none;
+            background: #f8f9fa;
+            border-top: 1px solid var(--li-border);
+            padding: 1rem;
+        }
+
+        .qa-item {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .qa-q {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .qa-a {
+            font-size: 0.85rem;
+            color: #555;
+            background: white;
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        .nav-logo {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/dashboard" class="nav-logo">
+                <img src="/static/img/logo.png" alt="HireWise Logo">
+            </a>
+            <div class="nav-items">
+                <a href="/dashboard" class="nav-link active">
+                    <i class="fas fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <a href="/logout" class="nav-link" style="color: #dc3545;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Left Column -->
+        <aside class="left-aside">
+            <div class="card profile-card">
+                <div class="profile-header"></div>
+                <div class="profile-info">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="profile-name">{{ user.full_name }}</div>
+                    <div class="profile-role">{{ user.role | capitalize }} at HireWise</div>
+
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Column -->
+        <main class="main-content">
+            {% if user.role == 'recruiter' %}
+            <div class="card create-box">
+                <div class="create-box-header">
+                    <div class="profile-avatar"
+                        style="width: 44px; height: 44px; font-size: 1.1rem; margin: 0; flex-shrink: 0;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="input-placeholder"
+                        onclick="document.getElementById('createModal').style.display='flex'">
+                        Start a new interview assessment...
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if msg %}
+            <div class="card"
+                style="padding: 12px 1.25rem; background: #d4edda; color: #155724; border-color: #c3e6cb; font-size: 0.9rem; text-align: center; border-radius: 14px;">
+                {{ msg }}
+            </div>
+            {% endif %}
+
+            {% for interview in interviews %}
+            <div class="card feed-item">
+                <div class="feed-header">
+                    <div class="feed-actor">
+                        <div class="profile-avatar" style="width: 48px; height: 48px; font-size: 1.2rem; margin: 0;">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="actor-info">
+                            <h4>HireWise Talent Acquisition</h4>
+                            <p>Assigned to: {{ interview.candidate.full_name if interview.candidate else
+                                interview.candidate_id }}</p>
+                            <p>1m • <i class="fas fa-globe-americas"></i></p>
+                        </div>
+                    </div>
+                    <i class="fas fa-ellipsis-h" style="color: var(--li-text-secondary); cursor: pointer;"></i>
+                </div>
+                <div class="feed-content">
+                    <div class="interview-details">
+                        <strong style="color: var(--li-blue);">{{ interview.job_role }}</strong> • {{
+                        interview.difficulty }} Level
+                        {% if interview.pdf_file %}
+                        <div style="margin-top: 5px; color: #28a745; font-size: 0.8rem;">
+                            <i class="fas fa-paperclip"></i> 📄 Assessment PDF Attached
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <span class="status-pill status-{{ interview.status }}">
+                        {{ 'PASSED ✅' if interview.status == 'cleared' else
+                        'REJECTED ❌' if interview.status == 'rejected' else
+                        'UNDER REVIEW ⏳' if interview.status == 'completed' else
+                        interview.status | upper }}
+                    </span>
+
+                    {% if interview.recruiter_feedback %}
+                    <div
+                        style="margin-top: 10px; padding: 10px; background: #fdf6e3; border-radius: 4px; font-size: 0.85rem; border-left: 3px solid #b58900;">
+                        <strong>Feedback:</strong> {{ interview.recruiter_feedback }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="feed-actions">
+                    {% if user.role == 'recruiter' %}
+                    <button class="action-btn" onclick="toggleSection('qs-{{ interview.id }}')">
+                        <i class="fas fa-eye"></i> View Q&A
+                    </button>
+                    <button class="action-btn" onclick="toggleSection('eval-{{ interview.id }}')">
+                        <i class="fas fa-chart-line"></i> AI Report
+                    </button>
+                    {% if interview.status == 'completed' or interview.status == 'cleared' or interview.status ==
+                    'rejected' %}
+                    <button class="action-btn" onclick="toggleSection('review-{{ interview.id }}')">
+                        <i class="fas fa-check-double"></i> Review
+                    </button>
+                    {% endif %}
+                    {% else %}
+                    {% if interview.status == 'pending' %}
+                    <a href="/interview/{{ interview.id }}" class="action-btn"
+                        style="text-decoration: none; color: var(--li-blue);">
+                        <i class="fas fa-play-circle"></i> Start Now
+                    </a>
+                    {% else %}
+                    <button class="action-btn" disabled>
+                        <i class="fas fa-check-circle"></i> Interview Finished
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Expandable Sections -->
+                <div id="qs-{{ interview.id }}" class="expand-section">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="font-weight: 600;">Candidate Logs</span>
+                        {% if interview.pdf_file %}
+                        <a href="/static/uploads/{{ interview.pdf_file }}" target="_blank"
+                            style="font-size: 0.8rem; color: var(--li-blue);">Original PDF</a>
+                        {% endif %}
+                    </div>
+                    {% set qs = json.loads(interview.questions) %}
+                    {% set rs = json.loads(interview.responses) if interview.responses else [] %}
+                    {% for i in range(qs|length) %}
+                    <div class="qa-item">
+                        <div class="qa-q">Q: {{ qs[i] }}</div>
+                        <div class="qa-a">{{ rs[i] if i < rs|length else "Awaiting response..." }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="eval-{{ interview.id }}" class="expand-section"
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                            <h5 style="font-size: 1.1rem; color: #1e293b; margin: 0;"><i class="fas fa-robot"
+                                    style="color: var(--hw-blue);"></i> AI Score & Analysis</h5>
+                            {% set eval = json.loads(interview.evaluation) if interview.evaluation else {} %}
+                            <div style="text-align: right;">
+                                <div
+                                    style="font-size: 2rem; font-weight: 800; color: {{ '#28a745' if (eval.score or 0) >= 70 else '#f59e0b' if (eval.score or 0) >= 40 else '#dc3545' }}; line-height: 1;">
+                                    {{ eval.score or 0 }}<span style="font-size: 1rem; color: #64748b;">/100</span>
+                                </div>
+                                <div
+                                    style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-top: 4px; text-transform: uppercase;">
+                                    Technical Score</div>
+                            </div>
+                        </div>
+
+                        <div
+                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
+                            <div style="font-weight: 700; font-size: 0.9rem; color: #334155; margin-bottom: 8px;">
+                                Technical Analysis</div>
+                            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6;">{{ eval.analysis }}</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div
+                                style="background: #f0fdf4; border-radius: 8px; padding: 12px; border: 1px solid #bbf7d0;">
+                                <div style="font-weight: 700; font-size: 0.8rem; color: #166534; margin-bottom: 5px;"><i
+                                        class="fas fa-plus-circle"></i> Key Strengths</div>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    {% for s in eval.strengths or [] %}
+                                    <li style="font-size: 0.8rem; color: #14532d; margin-bottom: 3px;">• {{ s }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div
+                                style="background: #fff1f2; border-radius: 8px; padding: 12px; border: 1px solid #fecdd3;">
+                                <div style="font-weight: 700; font-size: 0.8rem; color: #9f1239; margin-bottom: 5px;"><i
+                                        class="fas fa-minus-circle"></i> Areas for Growth</div>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    {% for w in eval.weaknesses or [] %}
+                                    <li style="font-size: 0.8rem; color: #881337; margin-bottom: 3px;">• {{ w }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div
+                            style="font-size: 0.8rem; color: #64748b; font-style: italic; background: #f1f5f9; padding: 10px; border-radius: 6px;">
+                            <strong>AI Summary:</strong> {{ eval.feedback }}
+                        </div>
+                    </div>
+
+                    <div id="review-{{ interview.id }}" class="expand-section" style="background: #fff3cd;">
+                        <h5 style="margin-bottom: 1rem;">Final Decision Panel</h5>
+                        <form action="/interview/{{ interview.id }}/review" method="post">
+                            <textarea name="feedback" placeholder="Write your final feedback here..." rows="3"
+                                style="width: 100%; border: 1px solid #ddd; padding: 10px; border-radius: 4px; margin-bottom: 10px;">{{ interview.recruiter_feedback or "" }}</textarea>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" name="decision" value="pass"
+                                    style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">Pass
+                                    Candidate</button>
+                                <button type="submit" name="decision" value="fail"
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">Reject
+                                    Candidate</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card"
+                    style="padding: 3rem 2rem; text-align: center; color: var(--li-text-secondary); border-radius: 14px;">
+                    <i class="fas fa-clipboard-list"
+                        style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.15; display: block;"></i>
+                    <p style="font-size: 0.95rem;">No interview assessments found.</p>
+                    {% if user.role == 'recruiter' %}
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Create one using the box above!</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+        </main>
+    </div>
+
+    <!-- Create Interview Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content" style="width: 580px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>Create New Assessment</h3>
+                <span class="close-modal"
+                    onclick="document.getElementById('createModal').style.display='none'">&times;</span>
+            </div>
+
+            <!-- Load from saved template -->
+            <div
+                style="background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-bookmark" style="color: #0077b5;"></i>
+                <select id="templateSelect" onchange="loadTemplate(this.value)"
+                    style="flex: 1; border: 1px solid #cce0ff; border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; background: white; color: #333;">
+                    <option value="">&#8212; Load a saved template &#8212;</option>
+                </select>
+                <button type="button" onclick="openTemplatesPanel()"
+                    style="background: none; border: 1px solid #0077b5; color: #0077b5; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">
+                    <i class="fas fa-list"></i> Manage
+                </button>
+            </div>
+
+            <form id="createForm" action="/interviews/create" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Candidate Email</label>
+                    <input type="email" name="candidate_email" required placeholder="candidate@example.com">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Job Role</label>
+                        <input type="text" id="jobRoleInput" name="job_role" required
+                            placeholder="e.g. Python Developer">
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulty</label>
+                        <select name="difficulty">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Expert">Expert</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="generate_ai" value="true" style="width: auto;">
+                        <span>Use HireWise AI to generate questions</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin: 0;">Questions (one per line)</label>
+                        <button type="button" onclick="openSaveTemplateForm()"
+                            style="background: #0077b5; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
+                            <i class="fas fa-save"></i> Save as Template
+                        </button>
+                    </div>
+                    <textarea id="manualQuestionsArea" name="manual_questions" rows="5"
+                        placeholder="Type your questions here, one per line..."></textarea>
+                </div>
+
+                <!-- Inline save template form -->
+                <div id="saveTemplateForm"
+                    style="display: none; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                    <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 10px; color: #333;"><i
+                            class="fas fa-save" style="color: #0077b5;"></i> Save as Template</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="templateNameInput" placeholder="Template name, e.g. Python SDE Screen"
+                            style="flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
+                        <button type="button" onclick="saveTemplate()"
+                            style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Save</button>
+                        <button type="button" onclick="document.getElementById('saveTemplateForm').style.display='none'"
+                            style="background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                    </div>
+                    <div id="saveTemplateMsg" style="font-size: 0.8rem; margin-top: 6px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload PDF Assessment (Optional)</label>
+                    <input type="file" name="pdf_file" accept=".pdf">
+                </div>
+                <button type="submit" class="submit-btn">Create &amp; Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Saved Templates Slide-in Panel -->
+    <div id="templatesPanel"
+        style="display: none; position: fixed; top: 0; right: 0; width: 380px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 2000; overflow-y: auto; padding: 1.5rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <h4 style="margin: 0; font-size: 1rem;"><i class="fas fa-bookmark" style="color: #0077b5;"></i> Saved
+                Templates</h4>
+            <span onclick="document.getElementById('templatesPanel').style.display='none'"
+                style="cursor: pointer; font-size: 1.4rem; color: #888; line-height: 1;">&times;</span>
+        </div>
+        <div id="templatesList" style="display: flex; flex-direction: column; gap: 10px;">
+            <p style="color: #888; font-size: 0.85rem; text-align: center; padding: 2rem 0;">Loading...</p>
+        </div>
+    </div>
+
+    <script>
+        // ── Section toggles ──────────────────────────────────────────
+        function toggleSection(id) {
+            const section = document.getElementById(id);
+            const isVisible = section.style.display === 'block';
+            const parent = section.closest('.card');
+            parent.querySelectorAll('.expand-section').forEach(s => s.style.display = 'none');
+            section.style.display = isVisible ? 'none' : 'block';
+        }
+
+        window.onclick = function (event) {
+            if (event.target == document.getElementById('createModal')) {
+                document.getElementById('createModal').style.display = 'none';
+            }
+        }
+
+        // ── Templates API ─────────────────────────────────────────────
+        let allTemplates = [];
+
+        async function fetchTemplates() {
+            try {
+                const res = await fetch('/templates');
+                allTemplates = await res.json();
+                return allTemplates;
+            } catch (e) { return []; }
+        }
+
+        async function populateTemplateDropdown() {
+            const templates = await fetchTemplates();
+            const sel = document.getElementById('templateSelect');
+            sel.innerHTML = '<option value="">&#8212; Load a saved template &#8212;</option>';
+            templates.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.name + (t.job_role ? ' (' + t.job_role + ')' : '');
+                sel.appendChild(opt);
+            });
+        }
+
+        function loadTemplate(templateId) {
+            if (!templateId) return;
+            const t = allTemplates.find(x => x.id == templateId);
+            if (!t) return;
+            document.getElementById('manualQuestionsArea').value = t.questions.join('\n');
+            if (t.job_role) document.getElementById('jobRoleInput').value = t.job_role;
+        }
+
+        function openSaveTemplateForm() {
+            const questions = document.getElementById('manualQuestionsArea').value.trim();
+            if (!questions) { alert('Please add at least one question first.'); return; }
+            document.getElementById('saveTemplateForm').style.display = 'block';
+            document.getElementById('templateNameInput').focus();
+            document.getElementById('saveTemplateMsg').textContent = '';
+        }
+
+        async function saveTemplate() {
+            const name = document.getElementById('templateNameInput').value.trim();
+            const questions = document.getElementById('manualQuestionsArea').value.trim();
+            const jobRole = document.getElementById('jobRoleInput').value.trim();
+            const msgEl = document.getElementById('saveTemplateMsg');
+
+            if (!name) { msgEl.style.color = '#dc3545'; msgEl.textContent = 'Please enter a template name.'; return; }
+            if (!questions) { msgEl.style.color = '#dc3545'; msgEl.textContent = 'No questions to save.'; return; }
+
+            const form = new FormData();
+            form.append('template_name', name);
+            form.append('job_role', jobRole);
+            form.append('questions_text', questions);
+
+            const res = await fetch('/templates/save', { method: 'POST', body: form });
+            if (res.ok) {
+                msgEl.style.color = '#28a745'; msgEl.textContent = 'Template saved!';
+                document.getElementById('templateNameInput').value = '';
+                await populateTemplateDropdown();
+                setTimeout(() => { document.getElementById('saveTemplateForm').style.display = 'none'; }, 1500);
+            } else {
+                msgEl.style.color = '#dc3545'; msgEl.textContent = 'Save failed. Try again.';
+            }
+        }
+
+        async function openTemplatesPanel() {
+            document.getElementById('templatesPanel').style.display = 'block';
+            await renderTemplatesPanel();
+        }
+
+        async function renderTemplatesPanel() {
+            const templates = await fetchTemplates();
+            const listEl = document.getElementById('templatesList');
+            if (!templates.length) {
+                listEl.innerHTML = '<p style="color:#888;font-size:0.85rem;text-align:center;padding:2rem 0;">No saved templates yet.</p>';
+                return;
+            }
+            listEl.innerHTML = templates.map(t => `
+                <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:10px;padding:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;">${t.name}</div>
+                            ${t.job_role ? `<div style="font-size:0.75rem;color:#666;">${t.job_role}</div>` : ''}
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="useTemplate(${t.id})" style="background:#0077b5;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer;">Use</button>
+                            <button onclick="deleteTemplate(${t.id})" style="background:#dc3545;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:0.78rem;cursor:pointer;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <ul style="margin:0;padding-left:16px;font-size:0.8rem;color:#555;">
+                        ${t.questions.slice(0, 3).map(q => `<li>${q}</li>`).join('')}
+                        ${t.questions.length > 3 ? `<li style="color:#999;">+${t.questions.length - 3} more...</li>` : ''}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        function useTemplate(templateId) {
+            loadTemplate(templateId);
+            document.getElementById('templatesPanel').style.display = 'none';
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        async function deleteTemplate(templateId) {
+            if (!confirm('Delete this template?')) return;
+            const res = await fetch(`/templates/${templateId}`, { method: 'DELETE' });
+            if (res.ok) { await populateTemplateDropdown(); renderTemplatesPanel(); }
+        }
+
+        document.addEventListener('DOMContentLoaded', populateTemplateDropdown);
+    </script>
+</body>
+
+</html>
