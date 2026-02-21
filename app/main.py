@@ -136,29 +136,48 @@ async def create_interview(
     
     if generate_ai:
         try:
-            # Try 1.5-flash as it's often more available
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            prompt = f"Generate 5 technical interview questions for a {difficulty} level {job_role}. Return ONLY a JSON list of strings [\"q1\", \"q2\", ...]. No other text."
-            response = model.generate_content(prompt)
-            print(f"AI Response: {response.text}")
-            
-            text = response.text.strip()
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0].strip()
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0].strip()
-            
-            questions_list = json.loads(text)
+            chat = groq_client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a world-class senior technical interviewer at a top-tier tech company. "
+                            "Your job is to craft sharp, practical, scenario-based interview questions that truly test a candidate's depth. "
+                            "Avoid generic or surface-level questions. Focus on real-world problem solving, edge cases, system thinking, and trade-offs. "
+                            "Return ONLY a JSON object with a single key 'questions' containing a list of question strings."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Generate exactly 7 high-quality technical interview questions for a {difficulty}-level {job_role} candidate.\n\n"
+                            f"Requirements:\n"
+                            f"- Match the {difficulty} difficulty honestly (Beginner = fundamentals + simple scenarios, "
+                            f"Intermediate = design + debugging + trade-offs, Expert = architecture, scalability, advanced internals)\n"
+                            f"- Mix question types: conceptual understanding, coding/design problems, debugging scenarios, and behavioral-technical hybrids\n"
+                            f"- Each question should be specific to {job_role} and standalone (no follow-ups needed)\n"
+                            f"- Write as if you're interviewing at Google, Amazon, or a top startup\n\n"
+                            f"Return ONLY this JSON: {{\"questions\": [\"q1\", \"q2\", \"q3\", \"q4\", \"q5\", \"q6\", \"q7\"]}}"
+                        )
+                    }
+                ],
+                model="llama-3.3-70b-versatile",
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            result = json.loads(chat.choices[0].message.content)
+            questions_list = result.get("questions", [])
+            print(f"Groq generated {len(questions_list)} questions for {job_role} ({difficulty})")
         except Exception as e:
-            print(f"AI Generation Error: {e}")
-            # Dynamic fallback
+            print(f"Groq Question Generation Error: {e}")
             questions_list = [
-                f"Explain your experience with {job_role}.",
-                f"What are some challenges you faced in a {difficulty} level project?",
-                "Tell me about a time you solved a complex technical problem.",
-                "How do you stay updated with latest technologies?",
-                "What is your preferred development environment?"
+                f"Walk me through how you would design a scalable {job_role} system from scratch.",
+                f"Describe a challenging bug you encountered in a {difficulty}-level project. How did you debug it?",
+                f"What are the key performance trade-offs you consider when working as a {job_role}?",
+                "How do you ensure code quality in a fast-moving team?",
+                "Tell me about a time you had to learn a new technology under time pressure.",
             ]
+
     elif manual_questions:
         questions_list = [q.strip() for q in manual_questions.split('\n') if q.strip()]
     
