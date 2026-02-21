@@ -39,25 +39,45 @@
 
 ## 🏗️ Architecture
 
-```
-HireWise/
-├── app/
-│   ├── main.py          # FastAPI routes & business logic
-│   ├── models.py        # SQLAlchemy ORM models
-│   ├── database.py      # Database engine & session
-│   ├── templates/       # Jinja2 HTML templates
-│   │   ├── login.html
-│   │   ├── signup.html
-│   │   ├── dashboard.html
-│   │   ├── interview.html
-│   │   └── admin.html
-│   └── static/          # CSS, images, uploads
-├── .env                 # API keys (never commit!)
-├── hirewise.db          # SQLite database
-└── requirements.txt
-```
 
----
+```mermaid
+flowchart TD
+    subgraph Clients["🌐 Clients"]
+        R["🧑💼 Recruiter Browser"]
+        C["👤 Candidate Browser"]
+        A["🛡️ Admin Browser"]
+    end
+
+    subgraph FastAPI["⚡ FastAPI Application "]
+        Auth["🔐 Auth & Session Argon2 + Cookies"]
+        Dash["📊 Dashboard Routes /dashboard"]
+        IV["📝 Interview Routes /interview"]
+        Tmpl["💾 Template Routes /templates"]
+        Admin["🛡️ Admin Routes /admin"]
+    end
+
+    subgraph AI["🤖 AI Services"]
+        Gemini["✨ Google Gemini 1.5 Flash · Question Gen · PDF Extraction"]
+        Groq["⚡ Groq · Llama 3.3 70B · Evaluation · Scoring"]
+    end
+
+    subgraph Storage["🗄️ Storage"]
+        DB[("SQLite · hirewise.db · Users · Interviews · Templates")]
+        Files["📁 Static Uploads /static/uploads"]
+    end
+
+    R & C & A --> Auth
+    Auth --> Dash & IV & Tmpl & Admin
+    Dash & IV --> Gemini
+    IV --> Groq
+    Dash & IV & Tmpl & Admin --> DB
+    IV --> Files
+
+    style FastAPI fill:#1e293b,stroke:#6366f1,color:#f1f5f9
+    style AI fill:#1a1033,stroke:#8b5cf6,color:#f1f5f9
+    style Storage fill:#0f2027,stroke:#0ea5e9,color:#f1f5f9
+    style Clients fill:#0f1f0f,stroke:#22c55e,color:#f1f5f9
+```
 
 ## 🧠 AI Stack
 
