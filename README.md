@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="app/static/img/logo.png" alt="HireWise Logo" height="80"/>
-
-# HireWise
+<img src="app/static/img/logo.png" alt="HireWise Logo" height="200"/>
 
 ### AI-Powered Recruitment & Interview Assessment Platform
 
@@ -18,7 +16,6 @@
 ---
 
 ## 🌐 Live Demo
-
 **[https://hirewise-81z1.onrender.com](https://hirewise-81z1.onrender.com)**
 
 
