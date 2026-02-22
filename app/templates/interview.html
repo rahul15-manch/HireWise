@@ -199,7 +199,7 @@
 
     <script>
         const interviewId = {{ interview.id }};
-        const questions = JSON.parse('{{ interview.questions | safe }}');
+        const questions = {{ interview.questions | safe }};
         let currentQIndex = 0;
         let recognition;
         let synth = window.speechSynthesis;
@@ -232,7 +232,7 @@
                 recognition.onend = () => {
                     // If recognition stops unexpectedly, we can restart it if we're still listening
                     if (document.getElementById('status').textContent === "Listening...") {
-                        try { recognition.start(); } catch(e) {}
+                        try { recognition.start(); } catch (e) { }
                     }
                 };
             } else {
@@ -248,7 +248,7 @@
             document.getElementById('visualizer').classList.remove('recording');
             document.getElementById('voice-indicator').textContent = "AI is asking a question...";
             document.getElementById('next-btn').style.display = 'none';
-            
+
             // Clear previous answer for new question
             document.getElementById('answer-input').value = "";
             finalTranscript = "";
@@ -274,7 +274,7 @@
             if (recognition) {
                 try {
                     recognition.stop();
-                } catch (e) {}
+                } catch (e) { }
             }
             document.getElementById('visualizer').classList.remove('recording');
             document.getElementById('next-btn').style.display = 'none';
