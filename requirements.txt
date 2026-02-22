@@ -10,3 +10,5 @@ email-validator
 google-generativeai
 pypdf
 argon2-cffi
+python-dotenv
+groq
