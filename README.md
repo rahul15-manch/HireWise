@@ -48,55 +48,77 @@
 
 ```mermaid
 flowchart TD
-    subgraph Clients["🌐 Clients"]
-        R["🧑💼 Recruiter Browser"]
-        C["👤 Candidate Browser"]
-        A["🛡️ Admin Browser"]
-        
-        subgraph CandidateLogic["⚡ On-Device Intelligence"]
-            MP["🛡️ MediaPipe Face Detection"]
-            MR["📹 MediaRecorder API"]
-            STT["🎙️ Web Speech STT"]
-        end
-        C --> CandidateLogic
+
+%% ================= CLIENT LAYER =================
+subgraph Clients["🌐 Client Layer"]
+    R["🧑‍💼 Recruiter Browser"]
+    C["👤 Candidate Browser"]
+    A["🛡️ Admin Browser"]
+
+    subgraph CandidateLogic["⚡ On-Device Intelligence"]
+        MP["🧠 MediaPipe Face Detection"]
+        MR["📹 MediaRecorder API"]
+        STT["🎙️ Web Speech STT"]
     end
 
-    subgraph FastAPI["⚡ FastAPI Application (Uvicorn)"]
-        Auth["🔐 Auth & Session Argon2 + Cookies"]
-        Dash["📊 Dashboard Routes /dashboard"]
-        IV["📝 Interview Routes /interview"]
-        Tmpl["💾 Template Routes /templates"]
-        Admin["🛡️ Admin Routes /admin"]
-        UP["📤 Upload Handling /upload-recording"]
-    end
+    C --> CandidateLogic
+end
 
-    subgraph AI["🤖 AI Services"]
-        Gemini["✨ Google Gemini 1.5 Flash · Question Gen · PDF Extraction"]
-        Groq["⚡ Groq · Llama 3.3 70B · Evaluation · Scoring"]
-    end
+%% ================= BACKEND =================
+subgraph FastAPI["⚡ FastAPI Backend (Uvicorn)"]
+    Auth["🔐 Auth & Sessions<br/>Argon2 + Cookies"]
+    Dash["📊 Dashboard APIs<br/>/dashboard"]
+    IV["📝 Interview Engine<br/>/interview"]
+    Tmpl["💾 Template Manager<br/>/templates"]
+    Admin["🛡️ Admin Controls<br/>/admin"]
+    UP["📤 Recording Upload<br/>/upload-recording"]
+end
 
-    subgraph Storage["🗄️ Storage"]
-        DB[("SQLite · hirewise.db · Users · Interviews · Templates")]
-        Files["📁 Static Uploads /static/uploads"]
-        Recs["📁 Video Recordings /static/recordings"]
-    end
+%% ================= AI SERVICES =================
+subgraph AI["🤖 AI Intelligence Layer"]
+    Gemini["✨ Gemini 1.5 Flash<br/>Question Generation · PDF Parsing"]
+    Groq["⚡ Groq · Llama 3.3 70B<br/>Answer Evaluation · Scoring"]
+end
 
-    R & C & A --> Auth
-    Auth --> Dash & IV & Tmpl & Admin
-    Dash & IV --> Gemini
-    IV --> Groq
-    Dash & IV & Tmpl & Admin & UP --> DB
-    IV --> Files
-    MR --"Uploads WebM"--> UP
-    UP --> Recs
-    CandidateLogic --"Logs Violations"--> IV
+%% ================= STORAGE =================
+subgraph Storage["🗄️ Data Layer"]
+    DB[("SQLite · hirewise.db<br/>Users · Interviews · Templates")]
+    Files["📁 Static Uploads<br/>/static/uploads"]
+    Recs["📁 Video Recordings<br/>/static/recordings"]
+end
 
-    style FastAPI fill:#1e293b,stroke:#6366f1,color:#f1f5f9
-    style AI fill:#1a1033,stroke:#8b5cf6,color:#f1f5f9
-    style Storage fill:#0f2027,stroke:#0ea5e9,color:#f1f5f9
-    style Clients fill:#0f1f0f,stroke:#22c55e,color:#f1f5f9
+%% ================= FLOWS =================
+R --> Auth
+C --> Auth
+A --> Auth
+
+Auth --> Dash
+Auth --> IV
+Auth --> Tmpl
+Auth --> Admin
+
+Dash --> Gemini
+IV --> Gemini
+IV --> Groq
+
+Dash --> DB
+IV --> DB
+Tmpl --> DB
+Admin --> DB
+UP --> DB
+
+IV --> Files
+MR -- "Uploads WebM" --> UP
+UP --> Recs
+
+CandidateLogic -- "Violation Logs" --> IV
+
+%% ================= STYLING =================
+style FastAPI fill:#1e293b,stroke:#6366f1,color:#f1f5f9
+style AI fill:#1a1033,stroke:#8b5cf6,color:#f1f5f9
+style Storage fill:#0f2027,stroke:#0ea5e9,color:#f1f5f9
+style Clients fill:#0f1f0f,stroke:#22c55e,color:#f1f5f9
 ```
-
 ### 📁 Project Structure
 
 
