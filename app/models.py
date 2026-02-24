@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -25,8 +25,11 @@ class Interview(Base):
     responses = Column(String) # JSON string of answers
     evaluation = Column(String) # JSON string of evaluation result
     pdf_file = Column(String, nullable=True) # Path to uploaded PDF
-    status = Column(String, default="pending") # pending, completed, cleared, rejected
+    status = Column(String, default="pending") # pending, completed, cleared, rejected, cheating_detected
     recruiter_feedback = Column(String, nullable=True) # Optional feedback from recruiter
+    cheat_flagged = Column(Boolean, default=False) # True if candidate was caught cheating
+    cheat_log = Column(String, nullable=True) # JSON array of timestamped violation events
+    recording_file = Column(String, nullable=True) # Path to candidate's interview video recording
 
     recruiter = relationship("User", back_populates="interviews_created", foreign_keys=[recruiter_id])
     candidate = relationship("User", back_populates="interviews_assigned", foreign_keys=[candidate_id])

@@ -292,6 +292,75 @@
             color: #721c24;
         }
 
+        .status-cheating_detected {
+            background: #1a0000;
+            color: #ff4444;
+            border: 1px solid #aa2222;
+        }
+
+        .cheat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #fff0f0;
+            color: #cc0000;
+            border: 1px solid #ffaaaa;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+            animation: cheatPulse 2s infinite;
+        }
+
+        @keyframes cheatPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(204, 0, 0, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(204, 0, 0, 0);
+            }
+        }
+
+        .cheat-log-panel {
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 0.82rem;
+        }
+
+        .cheat-log-panel h6 {
+            color: #991b1b;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+
+        .cheat-log-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px dashed #fca5a5;
+            color: #7f1d1d;
+        }
+
+        .cheat-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .cheat-ts {
+            font-size: 0.72rem;
+            color: #ef4444;
+            white-space: nowrap;
+        }
+
         .feed-actions {
             border-top: 1px solid var(--li-border);
             display: flex;
@@ -547,8 +616,14 @@
                         {{ 'PASSED ✅' if interview.status == 'cleared' else
                         'REJECTED ❌' if interview.status == 'rejected' else
                         'UNDER REVIEW ⏳' if interview.status == 'completed' else
+                        '🚫 CHEATING DETECTED' if interview.status == 'cheating_detected' else
                         interview.status | upper }}
                     </span>
+                    {% if interview.cheat_flagged %}
+                    {% set cheat_events = json.loads(interview.cheat_log) if interview.cheat_log else [] %}
+                    <span class="cheat-badge">⚠️ {{ cheat_events|length }} Proctoring Warning{{ 's' if
+                        cheat_events|length != 1 else '' }}</span>
+                    {% endif %}
 
                     {% if interview.recruiter_feedback and (user.role == 'recruiter' or interview.status in ['cleared',
                     'rejected']) %}
@@ -592,6 +667,10 @@
                     <button class="action-btn" onclick="toggleSection('result-{{ interview.id }}')"
                         style="color: #dc3545; border-color: #dc3545;">
                         <i class="fas fa-chart-line"></i> View Feedback
+                    </button>
+                    {% elif interview.status == 'cheating_detected' %}
+                    <button class="action-btn" disabled style="color: #cc0000; cursor: not-allowed;">
+                        <i class="fas fa-ban"></i> Interview Disqualified
                     </button>
                     {% endif %}
                     {% endif %}
@@ -665,6 +744,42 @@
                         <div class="qa-a">{{ rs[i] if i < rs|length else "Awaiting response..." }}</div>
                         </div>
                         {% endfor %}
+
+                        {% if interview.cheat_flagged and interview.cheat_log %}
+                        {% set cheat_events = json.loads(interview.cheat_log) %}
+                        <div class="cheat-log-panel">
+                            <h6>🚨 Proctoring Violation History ({{ cheat_events|length }} incident{{ 's' if
+                                cheat_events|length != 1 else '' }})</h6>
+                            {% for event in cheat_events %}
+                            <div class="cheat-log-item">
+                                <span>⚠️</span>
+                                <span style="flex:1;">{{ event.reason }}</span>
+                                <span class="cheat-ts">{{ event.timestamp }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if interview.recording_file %}
+                        <div
+                            style="background: #0f172a; border: 1px solid #1e40af; border-radius: 12px; padding: 1.1rem; margin-top: 14px;">
+                            <div
+                                style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.8rem;">
+                                <span style="font-weight: 700; color: #93c5fd; font-size: 0.9rem;">🎥 Interview
+                                    Recording</span>
+                                <a href="/static/recordings/{{ interview.recording_file }}" download
+                                    style="font-size: 0.78rem; color: #60a5fa; text-decoration: none; border: 1px solid #1e40af; padding: 3px 10px; border-radius: 20px;">
+                                    ⬇ Download
+                                </a>
+                            </div>
+                            <video controls src="/static/recordings/{{ interview.recording_file }}"
+                                style="width:100%; border-radius: 8px; max-height: 360px; background:#000; display:block;"
+                                preload="metadata">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        {% endif %}
+
                     </div>
 
                     <div id="eval-{{ interview.id }}" class="expand-section"

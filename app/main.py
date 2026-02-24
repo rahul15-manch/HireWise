@@ -331,6 +331,12 @@ async def complete_interview(interview_id: int, db: Session = Depends(database.g
         a = responses[i] if i < len(responses) else "No Answer"
         transcript += f"Q: {q}\nA: {a}\n\n"
         
+    cheat_log = json.loads(interview.cheat_log) if interview.cheat_log else []
+    proctoring_context = ""
+    if cheat_log:
+        proctoring_context = "\nPROCTORING VIOLATIONS DETECTED:\n" + "\n".join([f"- {v['reason']} at {v['timestamp']}" for v in cheat_log])
+        proctoring_context += "\n\nIMPORTANT: Consider these violations in your evaluation. Technical accuracy remains important, but suspicious behavior should be factored into the final result (e.g. recommend MANUAL_REVIEW or FAIL if violations are significant)."
+
     try:
         chat_completion = groq_client.chat.completions.create(
             messages=[
@@ -338,21 +344,23 @@ async def complete_interview(interview_id: int, db: Session = Depends(database.g
                     "role": "system",
                     "content": (
                         "You are a senior technical interviewer for HireWise. "
-                        "Evaluate interview transcripts and return ONLY a raw JSON object with no markdown or backticks."
+                        "Evaluate interview transcripts and proctoring logs. Return ONLY a raw JSON object with no markdown or backticks."
                     )
                 },
                 {
                     "role": "user",
                     "content": f"""
-                    Evaluate the following interview transcript for a {interview.job_role} role at {interview.difficulty} difficulty level.
+                    Evaluate the following interview transcript and proctoring context for a {interview.job_role} role at {interview.difficulty} difficulty level.
 
                     Transcript:
                     {transcript}
+                    {proctoring_context}
 
                     Analyze the candidate's performance across:
                     1. Technical Accuracy (Correctness of answers)
                     2. Depth of Knowledge (Nuance and detail)
                     3. Communication Clarity (Articulation and structure)
+                    4. Integrity (Factor in any proctoring violations if present)
 
                     Return ONLY a raw JSON object (no markdown, no backticks) with this exact structure:
                     {{"result": "PASS or FAIL or MANUAL_REVIEW", "score": <0-100 integer>, "strengths": ["strength1", "strength2"], "weaknesses": ["weakness1", "weakness2"], "analysis": "A detailed 2-3 sentence technical analysis.", "feedback": "A concise summary for the recruiter."}}
@@ -393,6 +401,64 @@ async def complete_interview(interview_id: int, db: Session = Depends(database.g
         
     db.commit()
     return {"status": "completed"}
+
+@app.post("/interview/{interview_id}/flag-cheat")
+async def flag_cheat(interview_id: int, request: Request, db: Session = Depends(database.get_db)):
+    """Log a cheating violation. If auto_fail=true, terminate the interview immediately."""
+    data = await request.json()
+    reason = data.get("reason", "Unknown violation")
+    timestamp = data.get("timestamp", "")
+    auto_fail = data.get("auto_fail", False)
+
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
+
+    # Append to cheat log
+    log = json.loads(interview.cheat_log) if interview.cheat_log else []
+    log.append({"reason": reason, "timestamp": timestamp})
+    interview.cheat_log = json.dumps(log)
+    interview.cheat_flagged = True # Always flag if there's any violation
+
+    if auto_fail:
+        interview.status = "cheating_detected"
+        interview.evaluation = json.dumps({
+            "result": "FAIL",
+            "score": 0,
+            "strengths": [],
+            "weaknesses": ["Cheating detected during interview"],
+            "analysis": f"This interview was automatically terminated due to cheating. Violations: {len(log)}.",
+            "feedback": f"⚠️ CHEATING DETECTED — Candidate was flagged by the automated proctoring system. {len(log)} violation(s) recorded."
+        })
+        print(f"[PROCTORING] Interview {interview_id} TERMINATED for cheating. Violations: {log}")
+
+    db.commit()
+    return {"status": "logged", "auto_failed": auto_fail}
+
+
+@app.post("/interview/{interview_id}/upload-recording")
+async def upload_recording(interview_id: int, file: UploadFile = File(...), db: Session = Depends(database.get_db)):
+    """Receive the candidate's interview video recording and save it."""
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
+
+    # Save to app/static/recordings/
+    recordings_dir = os.path.join(os.path.dirname(__file__), "static", "recordings")
+    os.makedirs(recordings_dir, exist_ok=True)
+
+    ext = ".webm"  # MediaRecorder default in Chrome
+    filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(recordings_dir, filename)
+
+    contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    interview.recording_file = filename
+    db.commit()
+    print(f"[RECORDING] Interview {interview_id} recording saved: {filename} ({len(contents)//1024}KB)")
+    return {"status": "saved", "filename": filename}
 
 @app.get("/logout")
 async def logout(request: Request):
@@ -510,10 +576,22 @@ async def admin_delete_user(user_id: int, request: Request, db: Session = Depend
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Delete associated interviews
-    db.query(models.Interview).filter(
+    # Delete associated interviews and cleanup recording files
+    interviews_to_delete = db.query(models.Interview).filter(
         (models.Interview.recruiter_id == user_id) | (models.Interview.candidate_id == user_id)
-    ).delete(synchronize_session=False)
+    ).all()
+    
+    recordings_dir = os.path.join(os.path.dirname(__file__), "static", "recordings")
+    for iv in interviews_to_delete:
+        if iv.recording_file:
+            rec_path = os.path.join(recordings_dir, iv.recording_file)
+            if os.path.exists(rec_path):
+                try:
+                    os.remove(rec_path)
+                    print(f"[ADMIN] Deleted recording: {iv.recording_file}")
+                except Exception as e:
+                    print(f"[ADMIN] Failed to delete recording {iv.recording_file}: {e}")
+        db.delete(iv)
 
     # Delete associated templates
     db.query(models.QuestionTemplate).filter(

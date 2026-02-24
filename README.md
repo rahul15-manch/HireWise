@@ -37,12 +37,13 @@
 |---|---|
 | 🤖 **AI Question Generation** | Auto-generate role-specific interview questions using Google Gemini 1.5 Flash |
 | 📊 **AI Technical Analysis** | Groq Llama 3.3 70B evaluates responses, scores 0-100, and highlights strengths & weaknesses |
+| 🛡️ **AI Proctoring** | Real-time CV-based proctoring (MediaPipe) detects eye/head movement and multiple faces |
+| 📹 **Video Recording** | Full interview video capture via MediaRecorder API for recruiter review and audit |
 | 💾 **Question Templates** | Save, reuse, and manage sets of interview questions across multiple assessments |
-| 📋 **Async Interview Flow** | Candidates complete interviews at their own pace — no live scheduling needed |
-| 🎯 **Recruiter Dashboard** | LinkedIn-inspired recruiter hub to manage, review, and decide on assessments |
-| 🛡️ **Admin Panel** | Full control panel to view all users, interview results, reset passwords, and delete accounts |
-| 📄 **PDF Upload** | Upload assessment PDFs — questions are auto-extracted via Gemini AI |
-| 🔐 **Secure Auth** | Argon2-hashed passwords, cookie-based session management |
+| 📋 **Async Interview Flow** | Candidates complete interviews at their own pace with voice-to-text transcription |
+| 🎯 **Recruiter Dashboard** | Review candidate scores, play interview recordings, and view detailed integrity reports |
+| 🛡️ **Admin Panel** | Full control over users and interviews, now with proctoring stats and global media review |
+| 📄 **PDF Extraction** | Upload assessment PDFs — questions are auto-extracted via Gemini AI and pypdf |
 
 ---
 
@@ -54,6 +55,13 @@ flowchart TD
         R["🧑💼 Recruiter Browser"]
         C["👤 Candidate Browser"]
         A["🛡️ Admin Browser"]
+        
+        subgraph CandidateLogic["⚡ On-Device Intelligence"]
+            MP["🛡️ MediaPipe Face Detection"]
+            MR["📹 MediaRecorder API"]
+            STT["🎙️ Web Speech STT"]
+        end
+        C --> CandidateLogic
     end
 
     subgraph FastAPI["⚡ FastAPI Application (Uvicorn)"]
@@ -62,6 +70,7 @@ flowchart TD
         IV["📝 Interview Routes /interview"]
         Tmpl["💾 Template Routes /templates"]
         Admin["🛡️ Admin Routes /admin"]
+        UP["📤 Upload Handling /upload-recording"]
     end
 
     subgraph AI["🤖 AI Services"]
@@ -72,14 +81,18 @@ flowchart TD
     subgraph Storage["🗄️ Storage"]
         DB[("SQLite · hirewise.db · Users · Interviews · Templates")]
         Files["📁 Static Uploads /static/uploads"]
+        Recs["📁 Video Recordings /static/recordings"]
     end
 
     R & C & A --> Auth
     Auth --> Dash & IV & Tmpl & Admin
     Dash & IV --> Gemini
     IV --> Groq
-    Dash & IV & Tmpl & Admin --> DB
+    Dash & IV & Tmpl & Admin & UP --> DB
     IV --> Files
+    MR --"Uploads WebM"--> UP
+    UP --> Recs
+    CandidateLogic --"Logs Violations"--> IV
 
     style FastAPI fill:#1e293b,stroke:#6366f1,color:#f1f5f9
     style AI fill:#1a1033,stroke:#8b5cf6,color:#f1f5f9
@@ -135,7 +148,8 @@ The evaluation pipeline uses Groq's native `json_object` response mode for relia
 
 ### 🧑‍💻 Candidate
 - Receive interview assignments via email
-- Complete interviews asynchronously at any time
+- Complete interviews asynchronously with real-time proctoring (camera & fullscreen mandatory)
+- Automatic video recording of the entire session
 - Get AI-powered evaluation upon submission
 
 ### 🛡️ Admin
@@ -235,6 +249,8 @@ Recruiter creates assessment
 | **Auth** | Passlib (Argon2) + Cookie sessions |
 | **AI — Evaluation** | Groq Cloud (Llama 3.3 70B Versatile) |
 | **AI — Generation** | Google Gemini 1.5 Flash |
+| **Proctoring** | MediaPipe Face Detection (JS) |
+| **Media** | MediaRecorder API + HTML5 Video |
 | **PDF Parsing** | pypdf + Gemini extraction |
 | **Server** | Uvicorn |
 

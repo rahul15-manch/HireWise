@@ -6,9 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interview - HireWise</title>
     <link rel="stylesheet" href="/static/style.css">
+    <!-- MediaPipe Face Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"
+        crossorigin="anonymous"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #202124;
+            background-color: #0f1117;
             color: white;
             margin: 0;
             padding: 0;
@@ -24,8 +32,8 @@
 
         .pdf-side {
             flex: 1.2;
-            background: #333;
-            border-right: 1px solid #444;
+            background: #1a1d27;
+            border-right: 1px solid #2d2f3a;
             display: flex;
             flex-direction: column;
         }
@@ -44,6 +52,7 @@
             padding: 2rem;
             text-align: center;
             overflow-y: auto;
+            position: relative;
         }
 
         .interview-container {
@@ -52,9 +61,11 @@
         }
 
         .question-box {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-bottom: 2rem;
             min-height: 100px;
+            line-height: 1.6;
+            color: #e8eaf6;
         }
 
         .controls {
@@ -76,7 +87,8 @@
         .bar {
             width: 5px;
             height: 10px;
-            background-color: #4285f4;
+            background: linear-gradient(180deg, #4285f4, #a56fff);
+            border-radius: 3px;
             animation: sound 0.5s infinite;
             animation-play-state: paused;
         }
@@ -100,32 +112,35 @@
         }
 
         #status {
-            color: #aaa;
+            color: #888;
             margin-bottom: 1rem;
+            font-size: 0.95rem;
         }
 
         .start-btn {
             padding: 1rem 2rem;
-            font-size: 1.2rem;
-            background: #28a745;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #4285f4, #a56fff);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(66, 133, 244, 0.35);
         }
 
         .start-btn:hover {
-            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(66, 133, 244, 0.5);
         }
 
         .pdf-header {
-            padding: 10px;
-            background: #202124;
+            padding: 10px 16px;
+            background: #0f1117;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid #2d2f3a;
         }
 
         .pdf-header a {
@@ -133,10 +148,244 @@
             text-decoration: none;
             font-size: 0.9rem;
         }
+
+        /* ── Proctoring UI ── */
+        #proctoring-overlay {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        #cam-preview-box {
+            width: 160px;
+            height: 110px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #4285f4;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            background: #000;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        #cam-preview-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #proctor-status-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            font-size: 0.6rem;
+            padding: 2px 7px;
+            border-radius: 20px;
+            background: rgba(40, 180, 80, 0.85);
+            color: white;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        #strike-badge {
+            background: rgba(15, 17, 23, 0.85);
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.78rem;
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        /* Toast warning */
+        .proctor-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            z-index: 9999;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .proctor-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-warn1 {
+            background: linear-gradient(135deg, #856404, #f0ad4e);
+            color: #fff;
+            box-shadow: 0 6px 30px rgba(240, 173, 78, 0.4);
+        }
+
+        .toast-warn2 {
+            background: linear-gradient(135deg, #a0290f, #e8572a);
+            color: #fff;
+            box-shadow: 0 6px 30px rgba(232, 87, 42, 0.4);
+        }
+
+        /* Final fail overlay */
+        #fail-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 5, 5, 0.95);
+            z-index: 99999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeInOverlay 0.5s ease;
+        }
+
+        @keyframes fadeInOverlay {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #fail-overlay h1 {
+            font-size: 3rem;
+            color: #ff4444;
+            margin-bottom: 1rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+            }
+
+            50% {
+                text-shadow: 0 0 30px rgba(255, 68, 68, 0.9);
+            }
+        }
+
+        #fail-overlay p {
+            color: #ccc;
+            font-size: 1.1rem;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        #fail-overlay .countdown {
+            margin-top: 2rem;
+            font-size: 1.4rem;
+            color: #888;
+        }
+
+        /* ── Fullscreen Reminder Overlay ── */
+        #fullscreen-reminder {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 10, 5, 0.97);
+            z-index: 99998;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: fadeInOverlay 0.3s ease;
+        }
+
+        #fullscreen-reminder h2 {
+            font-size: 2rem;
+            color: #f59e0b;
+            margin-bottom: 1rem;
+        }
+
+        #fullscreen-reminder p {
+            color: #aaa;
+            font-size: 1rem;
+            max-width: 440px;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        #fullscreen-reminder button {
+            padding: 0.9rem 2.5rem;
+            font-size: 1.05rem;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s;
+        }
+
+        #fullscreen-reminder button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hidden canvas for MediaPipe */
+        #proctor-canvas {
+            display: none;
+        }
+
+        #proctor-video {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- ── Proctoring Elements (hidden from view, used by MediaPipe) ── -->
+    <video id="proctor-video" playsinline></video>
+    <canvas id="proctor-canvas"></canvas>
+
+    <!-- ── Proctoring Overlay (visible camera preview + strike counter) ── -->
+    <div id="proctoring-overlay" style="display:none;">
+        <div id="cam-preview-box">
+            <video id="cam-mirror" autoplay playsinline muted></video>
+            <div id="proctor-status-badge">🔴 PROCTORED</div>
+        </div>
+        <div id="strike-badge">⚠️ Warnings: <span id="strike-count">0</span>/3</div>
+    </div>
+
+    <!-- ── Warning Toast ── -->
+    <div class="proctor-toast" id="proctor-toast"></div>
+
+    <!-- ── Auto-Fail Overlay ── -->
+    <div id="fail-overlay">
+        <h1>🚫 Interview Terminated</h1>
+        <p>Our proctoring system detected repeated violations of the interview rules. Your session has been
+            automatically ended and the recruiter has been notified.</p>
+        <div class="countdown">Redirecting in <span id="redirect-count">5</span>s...</div>
+    </div>
+
+    <!-- ── Fullscreen Reminder Overlay ── -->
+    <div id="fullscreen-reminder">
+        <h2>⚠️ You Exited Fullscreen</h2>
+        <p>The interview must be conducted in fullscreen mode. A violation has been logged. Click the button below to
+            return and continue your interview.</p>
+        <button onclick="returnToFullscreen()">🖥️ Return to Fullscreen</button>
+    </div>
+
+    <!-- ── Main Layout ── -->
     <div class="main-wrapper">
         {% if interview.pdf_file %}
         <div class="pdf-side">
@@ -151,17 +400,87 @@
         <div class="interview-side">
             <div class="interview-container" id="welcome-screen">
                 <h1>Interview for {{ interview.job_role }}</h1>
-                <p>Difficulty: {{ interview.difficulty }}</p>
+                <p style="color: #888; margin-bottom: 0.5rem;">Difficulty: <strong style="color:#a56fff;">{{
+                        interview.difficulty }}</strong></p>
 
                 {% if not interview.pdf_file %}
-                <p>This is a voice-enabled interview. The AI will ask you questions, and you will speak your answers.
-                </p>
+                <p style="color: #aaa; margin: 1.5rem 0;">This is a voice-enabled interview. The AI will ask you
+                    questions, and you will speak your answers.</p>
                 {% else %}
-                <p>Please review the assessment on the left. When you are ready, click "Start Interview" to begin the
-                    voice session.</p>
+                <p style="color: #aaa; margin: 1.5rem 0;">Please review the assessment on the left. When ready, click
+                    "Start Interview" to begin the voice session.</p>
                 {% endif %}
 
-                <button class="start-btn" onclick="startInterview()">Start Interview</button>
+                <!-- ── Rules & Warnings Panel ── -->
+                <div
+                    style="background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3); border-radius: 14px; padding: 1.3rem 1.4rem; margin: 1.4rem 0; text-align: left;">
+                    <p
+                        style="margin: 0 0 1rem; font-weight: 700; font-size: 1rem; color: #f87171; letter-spacing: 0.3px;">
+                        ⚠️ Interview Rules &amp; Warnings — Read Carefully
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.87rem; color: #ccc;">
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">01</span>
+                            <span>📹 <strong>Webcam required.</strong> Your face must be clearly visible throughout the
+                                entire interview. Looking away repeatedly will trigger a violation.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">02</span>
+                            <span>👤 <strong>One person only.</strong> Multiple faces in frame will be flagged as
+                                cheating immediately.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">03</span>
+                            <span>🖥️ <strong>Fullscreen is mandatory.</strong> The interview runs in fullscreen.
+                                Exiting fullscreen counts as a violation and you must return immediately.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">04</span>
+                            <span>🔄 <strong>No tab/window switching.</strong> Switching tabs or applications is
+                                detected — the <strong>2nd switch immediately terminates</strong> your interview.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">05</span>
+                            <span>🔕 <strong>No prolonged silence.</strong> If you do not respond for <strong>2
+                                    continuous minutes</strong>, a violation will be issued.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">06</span>
+                            <span>🚫 <strong>3 strikes = auto-fail.</strong> Any combination of the above violations
+                                (face, fullscreen, tab switch, silence) → automatic disqualification.</span>
+                        </div>
+                        <div style="display:flex; gap:0.7rem; align-items:flex-start;">
+                            <span style="color:#f87171; flex-shrink:0; font-weight:700;">07</span>
+                            <span>📩 <strong>Recruiter is notified.</strong> All violations are logged with timestamps.
+                                If you are disqualified, the recruiter sees a full report.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permission Status Card -->
+                <div id="perm-card"
+                    style="background: rgba(255,255,255,0.04); border: 1px solid #2d2f3a; border-radius: 12px; padding: 1rem 1.2rem; margin: 1.2rem 0; text-align: left;">
+                    <p style="margin: 0 0 0.7rem; font-weight: 600; color: #ccc; font-size: 0.9rem;">🔐 Device
+                        Permissions Required</p>
+                    <div style="display:flex; gap: 2rem; font-size: 0.88rem;">
+                        <div id="perm-cam" style="color: #888;">⏳ Camera</div>
+                        <div id="perm-mic" style="color: #888;">⏳ Microphone</div>
+                    </div>
+                    <p id="perm-error" style="margin: 0.6rem 0 0; font-size: 0.8rem; color: #ef4444; display:none;"></p>
+                </div>
+
+                <!-- Acknowledgement Checkbox -->
+                <label id="ack-label"
+                    style="display:flex; align-items:flex-start; gap: 0.75rem; cursor:pointer; margin-bottom: 1.2rem; padding: 0.9rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid #2d2f3a; border-radius: 10px; font-size: 0.87rem; color: #bbb; line-height: 1.5;">
+                    <input type="checkbox" id="ack-check" onchange="updateStartBtn()"
+                        style="width:18px; height:18px; flex-shrink:0; margin-top:1px; accent-color:#4285f4; cursor:pointer;">
+                    <span>I have read and understood all the interview rules and warnings above. I agree to be monitored
+                        via webcam and understand that violations will be reported to the recruiter.</span>
+                </label>
+
+                <button id="start-btn" class="start-btn" onclick="startInterview()" disabled
+                    style="opacity:0.45; cursor:not-allowed;">🎙️ Start Interview</button>
+
             </div>
 
             <div class="interview-container" id="interview-screen" style="display: none;">
@@ -175,23 +494,21 @@
                     <div class="bar"></div>
                 </div>
 
-                <div class="question-box" id="question-text">
-                    Initializing...
-                </div>
+                <div class="question-box" id="question-text">Initializing...</div>
 
                 <div style="margin-bottom: 1.5rem;">
                     <textarea id="answer-input"
                         placeholder="Your answer will appear here. You can also type manually..."
-                        style="width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #333; color: white; resize: none; font-size: 1rem;"></textarea>
+                        style="width: 100%; height: 120px; padding: 12px; border-radius: 10px; border: 1px solid #2d2f3a; background: #1a1d27; color: white; resize: none; font-size: 1rem;"></textarea>
                 </div>
 
-                <div style="font-size: 0.8rem; color: #888; margin-bottom: 1rem;">
+                <div style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">
                     <span id="voice-indicator">Click "Start Interview" to begin.</span>
                 </div>
 
                 <div class="controls">
-                    <button id="next-btn" onclick="nextQuestion()" style="display:none; padding: 0.5rem 2rem;"
-                        class="start-btn">Next Question</button>
+                    <button id="next-btn" onclick="nextQuestion()" style="display:none;" class="start-btn">Next Question
+                        →</button>
                 </div>
             </div>
         </div>
@@ -204,87 +521,342 @@
         let recognition;
         let synth = window.speechSynthesis;
         let finalTranscript = '';
+        let speechGen = 0; // generation counter — incremented on each new speakQuestion call
 
+        // Chrome TTS keepalive: Chrome silently pauses speechSynthesis when the tab
+        // briefly loses focus (e.g. during fullscreen transitions). This heartbeat
+        // forces it to resume so the utterance isn't replayed from the start.
+        setInterval(() => {
+            if (synth.speaking && synth.paused) synth.resume();
+        }, 1000);
+
+        // ── Proctoring State ──────────────────────────────────────────
+        let strikes = 0;
+        const MAX_STRIKES = 3;
+        let proctoringActive = false;
+        let graceTimer = null;          // cooldown between warnings
+        const GRACE_MS = 8000;          // 8s between consecutive warnings
+        const DETECTION_INTERVAL = 2000; // check every 2s
+        let noFaceCount = 0;
+        let multiFaceCount = 0;
+        const CONFIRM_FRAMES = 2;       // require N consecutive bad frames before warning
+
+        // ── Silence Detection State ───────────────────────────────────
+        const SILENCE_LIMIT_MS = 120000; // 2 minutes
+        let silenceTimer = null;
+
+        function startSilenceTimer() {
+            clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+                issueWarning("No response detected — silent for 2 minutes");
+                startSilenceTimer(); // restart so next silence also triggers
+            }, SILENCE_LIMIT_MS);
+        }
+
+        function resetSilenceTimer() {
+            clearTimeout(silenceTimer);
+            startSilenceTimer();
+        }
+
+        function stopSilenceTimer() {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+        }
+
+        // ── Permission Gate ───────────────────────────────────────────
+        // ── Start Button Gate (permissions + acknowledgement) ─────────
+        function updateStartBtn() {
+            const acked = document.getElementById('ack-check').checked;
+            const permsGranted = permStream !== null;
+            const btn = document.getElementById('start-btn');
+            const ready = acked && permsGranted;
+            btn.disabled = !ready;
+            btn.style.opacity = ready ? '1' : '0.45';
+            btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+        }
+
+        let permStream = null; // save stream so it can be reused by proctoring
+
+        async function checkPermissions() {
+            const camEl = document.getElementById('perm-cam');
+            const micEl = document.getElementById('perm-mic');
+            const errEl = document.getElementById('perm-error');
+            const btn = document.getElementById('start-btn');
+
+            camEl.textContent = '⏳ Camera';
+            micEl.textContent = '⏳ Microphone';
+            camEl.style.color = micEl.style.color = '#888';
+
+            try {
+                permStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                camEl.textContent = '✅ Camera';
+                micEl.textContent = '✅ Microphone';
+                camEl.style.color = micEl.style.color = '#4ade80';
+                errEl.style.display = 'none';
+                updateStartBtn(); // check if ack checkbox is also ticked
+            } catch (err) {
+                const denied = err.name === 'NotAllowedError';
+                const noCamera = err.name === 'NotFoundError';
+
+                if (denied) {
+                    camEl.textContent = '❌ Camera (denied)';
+                    micEl.textContent = '❌ Microphone (denied)';
+                    camEl.style.color = micEl.style.color = '#ef4444';
+                    errEl.textContent = 'Camera & microphone access was denied. Please allow them in your browser settings and refresh this page.';
+                } else if (noCamera) {
+                    camEl.textContent = '❌ No camera found';
+                    camEl.style.color = '#ef4444';
+                    micEl.textContent = '❌ No microphone found';
+                    micEl.style.color = '#ef4444';
+                    errEl.textContent = 'No camera or microphone detected. Please connect a device and refresh.';
+                } else {
+                    camEl.textContent = '❌ Error';
+                    micEl.textContent = '❌ Error';
+                    errEl.textContent = `Permission error: ${err.message}`;
+                }
+                errEl.style.display = 'block';
+                console.error('[PERMISSIONS]', err);
+            }
+        }
+
+        // Request permissions as soon as the page loads
+        checkPermissions();
+
+        let faceDetection = null;
+        let proctoringStream = null;
+
+        // ── Video Recording State ─────────────────────────────────────
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        // ── Fullscreen & Window-Switch State ──────────────────────────
+        let tabSwitchCount = 0;
+        const MAX_TAB_SWITCHES = 2; // 1st = warning, 2nd = auto-cancel
+        let fullscreenExited = false;
+
+        // ── Interview Control ─────────────────────────────────────────
         function startInterview() {
             document.getElementById('welcome-screen').style.display = 'none';
             document.getElementById('interview-screen').style.display = 'block';
 
-            // Setup Speech Recognition
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = 'en-US';
+            // 2. Setup violation monitors before fullscreen
+            setupFullscreenMonitor();
+            setupTabSwitchMonitor();
+            setupSpeechRecognition();
+            startProctoring();
 
-                recognition.onresult = (event) => {
-                    let interimTranscript = '';
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            finalTranscript += event.results[i][0].transcript;
-                        } else {
-                            interimTranscript += event.results[i][0].transcript;
-                        }
-                    }
-                    document.getElementById('answer-input').value = finalTranscript + interimTranscript;
-                };
+            // 1. Enter fullscreen, then speak the first question AFTER fullscreen
+            //    is established. This prevents Chrome from pausing/replaying TTS
+            //    during the focus-blur-refocus cycle that fullscreen causes.
+            let questionScheduled = false;
+            const scheduleFirstQuestion = () => {
+                if (questionScheduled) return;
+                questionScheduled = true;
+                speakQuestion(questions[0]);
+            };
 
-                recognition.onend = () => {
-                    // If recognition stops unexpectedly, we can restart it if we're still listening
-                    if (document.getElementById('status').textContent === "Listening...") {
-                        try { recognition.start(); } catch (e) { }
-                    }
-                };
+            // Listen for fullscreen to be granted, then speak
+            const onFirstFS = () => {
+                const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+                if (inFS) {
+                    document.removeEventListener('fullscreenchange', onFirstFS);
+                    document.removeEventListener('webkitfullscreenchange', onFirstFS);
+                    setTimeout(scheduleFirstQuestion, 300); // brief settle
+                }
+            };
+            document.addEventListener('fullscreenchange', onFirstFS);
+            document.addEventListener('webkitfullscreenchange', onFirstFS);
+
+            // Fallback: if fullscreen is denied or takes too long, speak anyway
+            setTimeout(scheduleFirstQuestion, 1500);
+
+            // Request fullscreen
+            setTimeout(enterFullscreen, 200);
+        }
+
+        // ── Fullscreen ────────────────────────────────────────────────
+        function enterFullscreen() {
+            const el = document.documentElement;
+            const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+            if (req) {
+                // Pause TTS during fullscreen entry to prevent Chrome from
+                // replaying the utterance after the focus-blur cycle
+                if (synth.speaking && !synth.paused) synth.pause();
+                req.call(el)
+                    .then(() => { if (synth.paused) synth.resume(); })
+                    .catch(err => {
+                        if (synth.paused) synth.resume();
+                        console.warn('[PROCTORING] Fullscreen denied:', err);
+                    });
+            }
+        }
+
+        function setupFullscreenMonitor() {
+            let enteringFS = false; // flag to skip the initial enter-fullscreen event
+
+            const onChange = () => {
+                const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+
+                if (inFS) {
+                    // Entered fullscreen — hide the reminder overlay if it's showing
+                    document.getElementById('fullscreen-reminder').style.display = 'none';
+                    return;
+                }
+
+                // Exited fullscreen
+                if (!proctoringActive) return; // interview hasn't started yet
+
+                // Show the blocking reminder overlay (user must click to re-enter)
+                // Browsers block programmatic requestFullscreen() — it must be a user gesture
+                document.getElementById('fullscreen-reminder').style.display = 'flex';
+
+                // Log violation
+                issueWarning("Fullscreen exited — please return to fullscreen mode");
+            };
+
+            document.addEventListener('fullscreenchange', onChange);
+            document.addEventListener('webkitfullscreenchange', onChange);
+            document.addEventListener('mozfullscreenchange', onChange);
+        }
+
+        // Called by the 'Return to Fullscreen' button — button click IS a user gesture
+        function returnToFullscreen() {
+            enterFullscreen();
+            // Overlay will be hidden automatically when fullscreenchange fires with inFS=true
+        }
+
+        // ── Tab / Window Switch ───────────────────────────────────────
+        function setupTabSwitchMonitor() {
+            // visibilitychange fires when tab is hidden
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden' && proctoringActive) {
+                    handleTabSwitch();
+                }
+            });
+
+            // blur fires when window loses focus (alt-tab, etc.)
+            window.addEventListener('blur', () => {
+                if (proctoringActive) {
+                    handleTabSwitch();
+                }
+            });
+        }
+
+        let tabSwitchHandled = false; // debounce blur + visibilitychange firing together
+        function handleTabSwitch() {
+            if (tabSwitchHandled) return;
+            tabSwitchHandled = true;
+            setTimeout(() => { tabSwitchHandled = false; }, 2000);
+
+            tabSwitchCount++;
+
+            if (tabSwitchCount >= MAX_TAB_SWITCHES) {
+                // Second switch — immediate auto-fail
+                issueWarning("Tab/window switched repeatedly — interview terminated", true);
             } else {
+                // First switch — warning
+                issueWarning("Tab/window switch detected — do not leave this page");
+            }
+        }
+
+        function setupSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
                 alert("Browser does not support Speech API. Please use Chrome.");
+                return;
             }
 
-            speakQuestion(questions[0]);
+            recognition = new SpeechRecognition();
+            // Use continuous:false — we manually restart after each result.
+            // This gives us full control; the browser never auto-restarts the session.
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                document.getElementById('answer-input').value = finalTranscript + interim;
+                resetSilenceTimer();
+            };
+
+            recognition.onend = () => {
+                // Only restart a new session if it is still the candidate's turn
+                // and the AI is NOT speaking. Never restart during TTS.
+                if (document.getElementById('status').textContent === 'Listening...' && !synth.speaking) {
+                    try { recognition.start(); } catch (e) { /* already running */ }
+                }
+            };
+
+            recognition.onerror = (e) => {
+                // 'aborted' is expected — we abort intentionally when AI speaks
+                if (e.error === 'aborted' || e.error === 'no-speech') return;
+                console.warn('[SPEECH] Error:', e.error);
+            };
         }
 
         function speakQuestion(text) {
+            // Capture this call's generation number.
+            // Any older onend/setTimeout that still fires will see myGen !== speechGen and bail.
+            const myGen = ++speechGen;
+
+            if (recognition) { try { recognition.abort(); } catch (e) { } }
+            synth.cancel();
+
+            // Update UI
             document.getElementById('question-text').textContent = text;
-            document.getElementById('status').textContent = "AI Speaking...";
+            document.getElementById('status').textContent = 'AI Speaking...';
             document.getElementById('visualizer').classList.remove('recording');
-            document.getElementById('voice-indicator').textContent = "AI is asking a question...";
+            document.getElementById('voice-indicator').textContent = 'AI is asking a question...';
             document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('answer-input').value = '';
+            finalTranscript = '';
 
-            // Clear previous answer for new question
-            document.getElementById('answer-input').value = "";
-            finalTranscript = "";
+            setTimeout(() => {
+                if (myGen !== speechGen) return; // superseded — another question started
 
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.onend = () => {
-                document.getElementById('status').textContent = "Listening...";
-                document.getElementById('visualizer').classList.add('recording');
-                document.getElementById('voice-indicator').textContent = "You can speak now or type your answer above.";
-                if (recognition) {
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        console.log("Recognition already started");
-                    }
-                }
-                document.getElementById('next-btn').style.display = 'inline-block';
-            };
-            synth.speak(utter);
+                const utter = new SpeechSynthesisUtterance(text);
+
+                utter.onstart = () => {
+                    if (recognition) { try { recognition.abort(); } catch (e) { } }
+                };
+
+                utter.onend = () => {
+                    if (myGen !== speechGen) return; // superseded — ignore this onend
+                    setTimeout(() => {
+                        if (myGen !== speechGen) return;
+                        document.getElementById('status').textContent = 'Listening...';
+                        document.getElementById('visualizer').classList.add('recording');
+                        document.getElementById('voice-indicator').textContent = 'You can speak now or type your answer above.';
+                        document.getElementById('next-btn').style.display = 'inline-block';
+                        if (recognition) { try { recognition.start(); } catch (e) { } }
+                        startSilenceTimer();
+                    }, 500);
+                };
+
+                synth.speak(utter);
+            }, 400);
         }
 
         async function nextQuestion() {
-            if (recognition) {
-                try {
-                    recognition.stop();
-                } catch (e) { }
-            }
+            stopSilenceTimer();
+            // abort() kills mic immediately, no onend-triggered restart
+            if (recognition) { try { recognition.abort(); } catch (e) { } }
             document.getElementById('visualizer').classList.remove('recording');
             document.getElementById('next-btn').style.display = 'none';
 
-            // Submit Answer (Prefer typed content in textarea)
             const answer = document.getElementById('answer-input').value;
             await fetch(`/interview/${interviewId}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question_index: currentQIndex, answer: answer })
+                body: JSON.stringify({ question_index: currentQIndex, answer })
             });
 
             currentQIndex++;
@@ -292,14 +864,217 @@
             if (currentQIndex < questions.length) {
                 speakQuestion(questions[currentQIndex]);
             } else {
+                stopProctoring(); // stops MediaRecorder → triggers onstop → uploadRecording()
                 document.getElementById('question-text').textContent = "Interview Completed. Processing results...";
                 document.getElementById('status').textContent = "Please wait...";
                 document.getElementById('answer-input').style.display = 'none';
                 document.getElementById('voice-indicator').style.display = 'none';
 
                 await fetch(`/interview/${interviewId}/complete`, { method: 'POST' });
-                window.location.href = '/dashboard';
+                // Give recording upload ~2s to complete before navigating away
+                setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
             }
+        }
+
+        // ── Proctoring Engine ─────────────────────────────────────────
+        async function startProctoring() {
+            try {
+                // Reuse the stream already acquired for permission check
+                // This avoids asking the browser/user twice for camera access
+                proctoringStream = permStream || await navigator.mediaDevices.getUserMedia({ video: true });
+
+                // Mirror preview
+                const mirror = document.getElementById('cam-mirror');
+                mirror.srcObject = proctoringStream;
+
+                // Hidden video for MediaPipe
+                const hiddenVideo = document.getElementById('proctor-video');
+                hiddenVideo.srcObject = proctoringStream;
+                hiddenVideo.play();
+
+                document.getElementById('proctoring-overlay').style.display = 'flex';
+
+                // Init MediaPipe Face Detection
+                faceDetection = new FaceDetection({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+                });
+
+                faceDetection.setOptions({
+                    model: 'short',
+                    minDetectionConfidence: 0.5
+                });
+
+                faceDetection.onResults(handleFaceResults);
+
+                proctoringActive = true;
+                runDetectionLoop();
+
+                // Start recording the candidate's video (audio+video from permStream)
+                startVideoRecording();
+
+            } catch (err) {
+                console.warn('[PROCTORING] Camera access denied or unavailable:', err);
+                // Fail gracefully — interview can still proceed without proctoring
+            }
+        }
+
+        function stopProctoring() {
+            proctoringActive = false;
+            stopSilenceTimer();
+            // Stop MediaRecorder — triggers ondataavailable/onstop for upload
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (proctoringStream) {
+                proctoringStream.getTracks().forEach(t => t.stop());
+            }
+        }
+
+        function startVideoRecording() {
+            const stream = permStream || proctoringStream;
+            if (!stream || !window.MediaRecorder) return;
+
+            recordedChunks = [];
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                ? 'video/webm;codecs=vp9' : 'video/webm';
+
+            try {
+                mediaRecorder = new MediaRecorder(stream, { mimeType });
+            } catch (e) {
+                console.warn('[RECORDING] MediaRecorder init failed:', e);
+                return;
+            }
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                uploadRecording();
+            };
+
+            mediaRecorder.start(5000); // collect chunks every 5s
+            console.log('[RECORDING] Started recording interview video');
+        }
+
+        async function uploadRecording() {
+            if (recordedChunks.length === 0) return;
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const formData = new FormData();
+            formData.append('file', blob, 'recording.webm');
+            try {
+                const res = await fetch(`/interview/${interviewId}/upload-recording`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                console.log('[RECORDING] Uploaded:', data.filename);
+            } catch (e) {
+                console.error('[RECORDING] Upload failed:', e);
+            }
+        }
+
+        let detectedFaceCount = 0;
+
+        function handleFaceResults(results) {
+            detectedFaceCount = results.detections ? results.detections.length : 0;
+        }
+
+        async function runDetectionLoop() {
+            if (!proctoringActive) return;
+
+            const video = document.getElementById('proctor-video');
+
+            if (video.readyState >= 2 && faceDetection) {
+                try {
+                    await faceDetection.send({ image: video });
+                } catch (e) { }
+
+                evaluateFaces(detectedFaceCount);
+            }
+
+            setTimeout(runDetectionLoop, DETECTION_INTERVAL);
+        }
+
+        function evaluateFaces(count) {
+            if (graceTimer) return; // in cooldown — skip evaluation
+
+            if (count === 0) {
+                noFaceCount++;
+                multiFaceCount = 0;
+                if (noFaceCount >= CONFIRM_FRAMES) {
+                    noFaceCount = 0;
+                    issueWarning("No face detected — please stay in frame");
+                }
+            } else if (count > 1) {
+                multiFaceCount++;
+                noFaceCount = 0;
+                if (multiFaceCount >= CONFIRM_FRAMES) {
+                    multiFaceCount = 0;
+                    issueWarning("Multiple faces detected — this is a violation");
+                }
+            } else {
+                // Normal — reset consecutive counters
+                noFaceCount = 0;
+                multiFaceCount = 0;
+            }
+        }
+
+        async function issueWarning(reason, forceAutoFail = false) {
+            const isAutoFail = forceAutoFail || (++strikes >= MAX_STRIKES);
+            if (!forceAutoFail) {
+                document.getElementById('strike-count').textContent = strikes;
+            }
+
+            // Start grace cooldown (skip if force-failing)
+            if (!forceAutoFail && !graceTimer) {
+                graceTimer = setTimeout(() => { graceTimer = null; }, GRACE_MS);
+            }
+
+            // Log violation to server
+            const timestamp = new Date().toISOString();
+            await fetch(`/interview/${interviewId}/flag-cheat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason, timestamp, auto_fail: isAutoFail })
+            });
+
+            if (isAutoFail) {
+                triggerAutoFail();
+                return;
+            }
+
+            // Show warning toast
+            const toast = document.getElementById('proctor-toast');
+            toast.className = `proctor-toast ${strikes === 1 ? 'toast-warn1' : 'toast-warn2'}`;
+            toast.innerHTML = `⚠️ Warning ${strikes}/3 &nbsp;—&nbsp; ${reason}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 5000);
+        }
+
+        function triggerAutoFail() {
+            // Stop everything
+            stopProctoring();
+            if (recognition) { try { recognition.stop(); } catch (e) { } }
+            synth.cancel();
+
+            // Show fail overlay
+            const overlay = document.getElementById('fail-overlay');
+            overlay.style.display = 'flex';
+
+            // Countdown redirect — wait for recording upload before navigating
+            let secs = 5;
+            const countEl = document.getElementById('redirect-count');
+            const countdown = setInterval(() => {
+                secs--;
+                countEl.textContent = secs;
+                if (secs <= 0) {
+                    clearInterval(countdown);
+                    // uploadRecording() was triggered by mediaRecorder.stop() inside stopProctoring()
+                    // Give it a short moment to finish, then redirect
+                    setTimeout(() => { window.location.href = '/dashboard'; }, 800);
+                }
+            }, 1000);
         }
     </script>
 </body>

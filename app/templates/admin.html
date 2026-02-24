@@ -461,10 +461,12 @@
         {% set all_interviews = candidate_interviews.values() | list %}
         {% set total_ivs = namespace(n=0) %}
         {% set passed_ivs = namespace(n=0) %}
+        {% set flagged_ivs = namespace(n=0) %}
         {% for ivs in candidate_interviews.values() %}
         {% for iv in ivs %}
         {% set total_ivs.n = total_ivs.n + 1 %}
         {% if iv.status == 'cleared' %}{% set passed_ivs.n = passed_ivs.n + 1 %}{% endif %}
+        {% if iv.cheat_flagged %}{% set flagged_ivs.n = flagged_ivs.n + 1 %}{% endif %}
         {% endfor %}
         {% endfor %}
 
@@ -484,6 +486,10 @@
             <div class="stat-card green">
                 <div class="label">Interviews Total</div>
                 <div class="value">{{ total_ivs.n }}</div>
+            </div>
+            <div class="stat-card red">
+                <div class="label">Flagged Issues</div>
+                <div class="value">{{ flagged_ivs.n }}</div>
             </div>
         </div>
 
@@ -569,7 +575,9 @@
                                             <th>Job Role</th>
                                             <th>Difficulty</th>
                                             <th>Status</th>
+                                            <th>Proctoring</th>
                                             <th>AI Score</th>
+                                            <th>Media</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -589,6 +597,19 @@
                                                 {% else %}<span class="pill pill-pending">PENDING</span>{% endif %}
                                             </td>
                                             <td>
+                                                {% if iv.cheat_flagged %}
+                                                {% set cheat_events = json.loads(iv.cheat_log) if iv.cheat_log else []
+                                                %}
+                                                <span class="pill pill-fail"
+                                                    style="font-size: 0.65rem; border: 1px solid #f87171;">
+                                                    ⚠️ {{ cheat_events|length }} Warning{{ 's' if cheat_events|length !=
+                                                    1 else '' }}
+                                                </span>
+                                                {% else %}
+                                                <span style="color: #4ade80; font-size: 0.65rem;">✅ Clear</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
                                                 {% if eval_data.score is defined %}
                                                 <strong
                                                     style="color: {% if (eval_data.score or 0) >= 70 %}#4ade80{% elif (eval_data.score or 0) >= 40 %}#fbbf24{% else %}#f87171{% endif %};">
@@ -596,7 +617,63 @@
                                                 </strong>
                                                 {% else %}—{% endif %}
                                             </td>
+                                            <td>
+                                                <div style="display: flex; gap: 5px;">
+                                                    {% if iv.recording_file %}
+                                                    <button class="btn btn-primary" style="padding: 2px 8px;"
+                                                        onclick="toggleExpand('det-{{ iv.id }}')">
+                                                        <i class="fas fa-play"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                    {% if iv.cheat_log %}
+                                                    <button class="btn btn-ghost" style="padding: 2px 8px;"
+                                                        onclick="toggleExpand('det-{{ iv.id }}')">
+                                                        <i class="fas fa-history"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
                                         </tr>
+                                        {% if iv.recording_file or iv.cheat_log %}
+                                        <tr id="det-{{ iv.id }}" class="expand-panel">
+                                            <td colspan="7" style="background: rgba(15, 23, 42, 0.6); padding: 20px;">
+                                                <div
+                                                    style="display: grid; grid-template-columns: {% if iv.recording_file and iv.cheat_log %}1fr 1fr{% else %}1fr{% endif %}; gap: 20px;">
+                                                    {% if iv.recording_file %}
+                                                    <div>
+                                                        <h6
+                                                            style="font-size: 0.75rem; margin-bottom: 8px; color: var(--admin-accent);">
+                                                            🎥 Session Recording</h6>
+                                                        <video controls
+                                                            style="width: 100%; border-radius: 8px; border: 1px solid var(--admin-border);">
+                                                            <source src="/static/recordings/{{ iv.recording_file }}"
+                                                                type="video/webm">
+                                                        </video>
+                                                    </div>
+                                                    {% endif %}
+
+                                                    {% if iv.cheat_log %}
+                                                    <div>
+                                                        <h6
+                                                            style="font-size: 0.75rem; margin-bottom: 8px; color: #f87171;">
+                                                            🚨 Violation History</h6>
+                                                        <div style="max-height: 200px; overflow-y: auto;">
+                                                            {% set cevents = json.loads(iv.cheat_log) %}
+                                                            {% for e in cevents %}
+                                                            <div
+                                                                style="font-size: 0.75rem; padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                                                                <span>⚠️ {{ e.reason }}</span>
+                                                                <span style="color: var(--admin-text-muted);">{{
+                                                                    e.timestamp }}</span>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
                                         {% endfor %}
                                     </tbody>
                                 </table>
