@@ -125,23 +125,24 @@ style Clients fill:#0f1f0f,stroke:#22c55e,color:#f1f5f9
 ```
 HireWise/
 ├── app/
-│   ├── main.py              # All FastAPI routes & business logic
-│   ├── models.py            # SQLAlchemy ORM models (User, Interview, QuestionTemplate)
-│   ├── database.py          # DB engine, session factory
-│   ├── templates/
-│   │   ├── login.html
-│   │   ├── signup.html
-│   │   ├── dashboard.html
-│   │   ├── interview.html
-│   │   └── admin.html
+│   ├── main.py              # FastAPI routes, AI logic & business flow
+│   ├── models.py            # SQLAlchemy models (User, Interview, Template)
+│   ├── database.py          # Session management & DB configuration
+│   ├── templates/           # Jinja2 HTML templates
+│   │   ├── admin.html       # Global proctoring & user management
+│   │   ├── dashboard.html   # Recruiter/Candidate result hub
+│   │   ├── interview.html   # AI proctored interview interface
+│   │   └── login/signup     # Authentication pages
 │   └── static/
-│       ├── img/
-│       ├── style.css
-│       └── uploads/
-├── .env
-├── hirewise.db
-├── requirements.txt
-└── README.md
+│       ├── recordings/      # store .webm interview videos
+│       ├── uploads/         # store assessment PDFs
+│       ├── img/             # branding & UI assets
+│       └── style.css        # core design system
+├── .env                     # API keys (Gemini, Groq)
+├── hirewise.db              # SQLite persistence
+├── requirements.txt         # Project dependencies
+├── render.yaml              # Deployment configuration
+└── README.md                # Documentation
 ```
 
 ## 🧠 AI Stack
