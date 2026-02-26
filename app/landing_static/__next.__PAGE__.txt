@@ -1,0 +1,13 @@
+1:"$Sreact.fragment"
+2:I[32177,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+3:I[7429,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+4:I[79722,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+5:I[15775,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+6:I[25050,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+7:I[40123,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+8:I[13642,["/_next/static/chunks/7fb4abff2f793fd6.js"],"default"]
+9:I[97367,["/_next/static/chunks/2f236954d6a65e12.js"],"OutletBoundary"]
+a:"$Sreact.suspense"
+:HL["/logo.png","image"]
+0:{"buildId":"I5p3QtVM7pCJ5kQ7qWCI5","rsc":["$","$1","c",{"children":[["$","main",null,{"className":"min-h-screen bg-black","children":[["$","nav",null,{"className":"fixed top-0 w-full z-50 bg-black/50 backdrop-blur-xl border-b border-white/5","children":["$","div",null,{"className":"container mx-auto px-6 h-20 flex items-center justify-between","children":[["$","div",null,{"className":"flex items-center gap-2","children":["$","img",null,{"src":"/logo.png","alt":"HireWise Logo","className":"h-10 w-auto"}]}],["$","div",null,{"className":"hidden md:flex items-center gap-8 text-sm text-gray-400","children":[["$","a",null,{"href":"#features","className":"hover:text-white transition-colors","children":"Features"}],["$","a",null,{"href":"#how-it-works","className":"hover:text-white transition-colors","children":"How it works"}],["$","a",null,{"href":"#testimonials","className":"hover:text-white transition-colors","children":"Testimonials"}],["$","a",null,{"href":"/login","className":"px-5 py-2 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all decoration-none","children":"Launch App"}]]}]]}]}],["$","$L2",null,{}],["$","$L3",null,{}],["$","$L4",null,{}],["$","$L5",null,{}],["$","$L6",null,{}],["$","$L7",null,{}],["$","$L8",null,{}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/7fb4abff2f793fd6.js","async":true}]],["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]]}],"loading":null,"isPartial":false}
+b:null

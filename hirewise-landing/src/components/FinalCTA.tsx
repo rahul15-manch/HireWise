@@ -24,7 +24,7 @@ export default function FinalCTA() {
                         Join forward-thinking companies already using HireWise to find their next technical superstars.
                     </p>
 
-                    <a href="http://localhost:8000/login" className="px-10 py-5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-all flex items-center gap-2 mx-auto shadow-2xl shadow-white/10 group scale-110 no-underline w-fit">
+                    <a href="/login" className="px-10 py-5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-all flex items-center gap-2 mx-auto shadow-2xl shadow-white/10 group scale-110 no-underline w-fit">
                         Start Using HireWise
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </a>

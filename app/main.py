@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Form, Depends, HTTPException, status, File
 import shutil
 import uuid
 from pypdf import PdfReader
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -15,6 +15,8 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Mount Next.js static assets at root level as expected by the static export
+app.mount("/_next", StaticFiles(directory="app/landing_static/_next"), name="next_static")
 templates = Jinja2Templates(directory="app/templates")
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -34,9 +36,13 @@ def get_current_user(request: Request, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+@app.get("/", response_class=FileResponse)
+async def read_root():
+    return FileResponse("app/landing_static/index.html")
+
+@app.get("/logo.png")
+async def landing_logo():
+    return FileResponse("app/landing_static/logo.png")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):

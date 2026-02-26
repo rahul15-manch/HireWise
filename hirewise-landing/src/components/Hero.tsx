@@ -40,7 +40,7 @@ export default function Hero() {
                             transition={{ duration: 0.6, delay: 0.4 }}
                             className="flex flex-wrap items-center justify-center lg:justify-start gap-4"
                         >
-                            <a href="http://localhost:8000/login" className="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all flex items-center gap-2 group no-underline">
+                            <a href="/login" className="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all flex items-center gap-2 group no-underline">
                                 Get Started
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </a>
