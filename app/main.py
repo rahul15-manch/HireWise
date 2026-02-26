@@ -118,6 +118,7 @@ async def create_interview(
     generate_ai: bool = Form(False),
     manual_questions: str = Form(None),
     pdf_file: UploadFile = File(None),
+    resume_file: UploadFile = File(None),
     db: Session = Depends(database.get_db)
 ):
     user_email = request.cookies.get("user_email")
@@ -128,12 +129,29 @@ async def create_interview(
 
     candidate = db.query(models.User).filter(models.User.email == candidate_email, models.User.role == "candidate").first()
     if not candidate:
-         # TODO: Handle error nicely in UI
-         # For prototype, reusing dashboard but passing error would be better
         return templates.TemplateResponse("dashboard.html", {"request": request, "user": recruiter, "interviews": [], "error": "Candidate not found!"})
 
     questions_list = []
-    
+    resume_text = ""
+    saved_resume_filename = None
+
+    # Handle Resume Upload and Text Extraction
+    if resume_file and resume_file.filename:
+        os.makedirs("app/static/uploads", exist_ok=True)
+        file_ext = os.path.splitext(resume_file.filename)[1]
+        saved_resume_filename = f"resume_{uuid.uuid4()}{file_ext}"
+        resume_path = os.path.join("app/static/uploads", saved_resume_filename)
+        
+        with open(resume_path, "wb") as buffer:
+            shutil.copyfileobj(resume_file.file, buffer)
+        
+        try:
+            reader = PdfReader(resume_path)
+            for page in reader.pages:
+                resume_text += page.extract_text() + "\n"
+        except Exception as e:
+            print(f"Resume Extraction Error: {e}")
+
     if generate_ai:
         try:
             chat = groq_client.chat.completions.create(
@@ -141,23 +159,25 @@ async def create_interview(
                     {
                         "role": "system",
                         "content": (
-                            "You are a world-class senior technical interviewer at a top-tier tech company. "
-                            "Your job is to craft sharp, practical, scenario-based interview questions that truly test a candidate's depth. "
-                            "Avoid generic or surface-level questions. Focus on real-world problem solving, edge cases, system thinking, and trade-offs. "
-                            "Return ONLY a JSON object with a single key 'questions' containing a list of question strings."
+                            "You are a world-class senior technical interviewer and recruiter at a top-tier tech company. "
+                            "Your job is to generate high-quality, personalized interview questions. "
+                            "If a candidate's resume is provided, analyze it to tailor questions to their specific experience and skills. "
+                            "If no resume is provided, generate sharp, scenario-based questions based on the job role and difficulty. "
+                            "Return ONLY a JSON object with two keys: 'candidate_summary' (a brief professional summary, or null if no resume) and 'questions' (a list of 7 question strings)."
                         )
                     },
                     {
                         "role": "user",
                         "content": (
                             f"Generate exactly 7 high-quality technical interview questions for a {difficulty}-level {job_role} candidate.\n\n"
+                            f"Resume Context (use this to personalize questions if provided):\n"
+                            f"{resume_text[:4000] if resume_text else 'No resume provided.'}\n\n"
                             f"Requirements:\n"
-                            f"- Match the {difficulty} difficulty honestly (Beginner = fundamentals + simple scenarios, "
-                            f"Intermediate = design + debugging + trade-offs, Expert = architecture, scalability, advanced internals)\n"
-                            f"- Mix question types: conceptual understanding, coding/design problems, debugging scenarios, and behavioral-technical hybrids\n"
-                            f"- Each question should be specific to {job_role} and standalone (no follow-ups needed)\n"
-                            f"- Write as if you're interviewing at Google, Amazon, or a top startup\n\n"
-                            f"Return ONLY this JSON: {{\"questions\": [\"q1\", \"q2\", \"q3\", \"q4\", \"q5\", \"q6\", \"q7\"]}}"
+                            f"- Match the {difficulty} difficulty honestly.\n"
+                            f"- If a resume is provided, ask deep questions about their specific projects, tools, and experience.\n"
+                            f"- Mix question types: conceptual, coding, and behavioral-technical hybrids.\n"
+                            f"- Write as if you're interviewing at a top-tier tech firm.\n\n"
+                            f"Return ONLY this JSON: {{\"candidate_summary\": \"...\", \"questions\": [\"q1\", ..., \"q7\"]}}"
                         )
                     }
                 ],
@@ -167,6 +187,7 @@ async def create_interview(
             )
             result = json.loads(chat.choices[0].message.content)
             questions_list = result.get("questions", [])
+            candidate_summary = result.get("candidate_summary", "")
             print(f"Groq generated {len(questions_list)} questions for {job_role} ({difficulty})")
         except Exception as e:
             print(f"Groq Question Generation Error: {e}")
@@ -177,6 +198,7 @@ async def create_interview(
                 "How do you ensure code quality in a fast-moving team?",
                 "Tell me about a time you had to learn a new technology under time pressure.",
             ]
+            candidate_summary = None
 
     elif manual_questions:
         questions_list = [q.strip() for q in manual_questions.split('\n') if q.strip()]
@@ -240,6 +262,8 @@ async def create_interview(
         difficulty=difficulty,
         questions=json.dumps(questions_list),
         pdf_file=saved_pdf_filename,
+        resume_file=saved_resume_filename,
+        candidate_summary=vars().get('candidate_summary'),
         status="pending"
     )
     db.add(new_interview)
@@ -356,14 +380,16 @@ async def complete_interview(interview_id: int, db: Session = Depends(database.g
                     {transcript}
                     {proctoring_context}
 
-                    Analyze the candidate's performance across:
-                    1. Technical Accuracy (Correctness of answers)
-                    2. Depth of Knowledge (Nuance and detail)
-                    3. Communication Clarity (Articulation and structure)
-                    4. Integrity (Factor in any proctoring violations if present)
+                    Analyze the candidate's performance using this point-based rubric (Total: 100 pts):
+                    1. Technical Accuracy (Correctness of code/answers): Max 40 pts
+                    2. Depth of Knowledge (Nuance, edge cases, system thinking): Max 30 pts
+                    3. Communication Clarity (Articulation, logical structure): Max 20 pts
+                    4. Integrity & Professionalism (Deduct for proctoring violations if significant): Max 10 pts
+
+                    CRITICAL: The final 'score' must be a precise integer calculated from these points (e.g., 73, 62, 84). DO NOT round to the nearest 10 (like 60, 70, 80). Provide a granular, specific score based on the evidence.
 
                     Return ONLY a raw JSON object (no markdown, no backticks) with this exact structure:
-                    {{"result": "PASS or FAIL or MANUAL_REVIEW", "score": <0-100 integer>, "strengths": ["strength1", "strength2"], "weaknesses": ["weakness1", "weakness2"], "analysis": "A detailed 2-3 sentence technical analysis.", "feedback": "A concise summary for the recruiter."}}
+                    {{"result": "PASS or FAIL or MANUAL_REVIEW", "score": <precise 0-100 integer>, "strengths": ["strength1", "strength2"], "weaknesses": ["weakness1", "weakness2"], "analysis": "A detailed 2-3 sentence technical analysis.", "feedback": "A concise summary for the recruiter."}}
                     """
                 }
             ],

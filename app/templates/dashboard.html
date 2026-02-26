@@ -610,6 +610,17 @@
                             <i class="fas fa-paperclip"></i> 📄 Assessment PDF Attached
                         </div>
                         {% endif %}
+                        {% if interview.resume_file %}
+                        <div style="margin-top: 5px; color: #6366f1; font-size: 0.8rem;">
+                            <i class="fas fa-file-invoice"></i> 📑 Candidate Resume Attached
+                        </div>
+                        {% endif %}
+                        {% if interview.candidate_summary %}
+                        <div
+                            style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #0077b5; font-size: 0.85rem; color: #333;">
+                            <strong>AI Candidate Summary:</strong> {{ interview.candidate_summary }}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <span class="status-pill status-{{ interview.status }}">
@@ -909,48 +920,60 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" name="generate_ai" value="true" style="width: auto;">
-                        <span>Use HireWise AI to generate questions</span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label style="margin: 0;">Questions (one per line)</label>
-                        <button type="button" onclick="openSaveTemplateForm()"
-                            style="background: #0077b5; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
-                            <i class="fas fa-save"></i> Save as Template
-                        </button>
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1rem; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                            <input type="checkbox" name="generate_ai" value="true" style="width: auto;">
+                            <span style="font-weight: 600;">✨ AI Generate Questions</span>
+                        </label>
                     </div>
-                    <textarea id="manualQuestionsArea" name="manual_questions" rows="5"
-                        placeholder="Type your questions here, one per line..."></textarea>
+                    <p style="font-size: 0.75rem; color: #666; margin: 0; align-self: center;">Personalizes questions if
+                        a resume is uploaded, otherwise generates role-based questions.</p>
                 </div>
 
-                <!-- Inline save template form -->
-                <div id="saveTemplateForm"
-                    style="display: none; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
-                    <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 10px; color: #333;"><i
-                            class="fas fa-save" style="color: #0077b5;"></i> Save as Template</div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="text" id="templateNameInput" placeholder="Template name, e.g. Python SDE Screen"
-                            style="flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
-                        <button type="button" onclick="saveTemplate()"
-                            style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Save</button>
-                        <button type="button" onclick="document.getElementById('saveTemplateForm').style.display='none'"
-                            style="background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label style="color: #6366f1;"><i class="fas fa-file-invoice"></i> Candidate Resume
+                            (PDF)</label>
+                        <input type="file" name="resume_file" accept=".pdf" style="font-size: 0.8rem;">
                     </div>
-                    <div id="saveTemplateMsg" style="font-size: 0.8rem; margin-top: 6px;"></div>
+                    <div class="form-group">
+                        <label style="color: #28a745;"><i class="fas fa-paperclip"></i> Assessment PDF
+                            (Optional)</label>
+                        <input type="file" name="pdf_file" accept=".pdf" style="font-size: 0.8rem;">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Upload PDF Assessment (Optional)</label>
-                    <input type="file" name="pdf_file" accept=".pdf">
-                </div>
-                <button type="submit" class="submit-btn">Create &amp; Send</button>
-            </form>
+                <button type="button" onclick="openSaveTemplateForm()"
+                    style="background: #0077b5; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-save"></i> Save as Template
+                </button>
         </div>
+        <textarea id="manualQuestionsArea" name="manual_questions" rows="5"
+            placeholder="Type your questions here, one per line..."></textarea>
+    </div>
+
+    <!-- Inline save template form -->
+    <div id="saveTemplateForm"
+        style="display: none; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 10px; color: #333;"><i class="fas fa-save"
+                style="color: #0077b5;"></i> Save as Template</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="templateNameInput" placeholder="Template name, e.g. Python SDE Screen"
+                style="flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
+            <button type="button" onclick="saveTemplate()"
+                style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Save</button>
+            <button type="button" onclick="document.getElementById('saveTemplateForm').style.display='none'"
+                style="background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+        </div>
+        <div id="saveTemplateMsg" style="font-size: 0.8rem; margin-top: 6px;"></div>
+    </div>
+
+    <button type="submit" class="submit-btn"
+        style="width: 100%; height: 44px; border-radius: 22px; margin-top: 10px;">Create &amp; Send Assessment</button>
+    </form>
+    </div>
     </div>
 
     <!-- Saved Templates Slide-in Panel -->

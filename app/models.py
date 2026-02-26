@@ -25,6 +25,8 @@ class Interview(Base):
     responses = Column(String) # JSON string of answers
     evaluation = Column(String) # JSON string of evaluation result
     pdf_file = Column(String, nullable=True) # Path to uploaded PDF
+    resume_file = Column(String, nullable=True) # Path to uploaded Resume PDF
+    candidate_summary = Column(String, nullable=True) # AI-generated professional summary from resume
     status = Column(String, default="pending") # pending, completed, cleared, rejected, cheating_detected
     recruiter_feedback = Column(String, nullable=True) # Optional feedback from recruiter
     cheat_flagged = Column(Boolean, default=False) # True if candidate was caught cheating
