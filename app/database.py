@@ -11,10 +11,20 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/hirewise.db"
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Re-encode specifically for PostgreSQL or add SSL if needed
+if "postgresql" in SQLALCHEMY_DATABASE_URL:
+    if "sslmode" not in SQLALCHEMY_DATABASE_URL:
+        if "?" in SQLALCHEMY_DATABASE_URL:
+            SQLALCHEMY_DATABASE_URL += "&sslmode=require"
+        else:
+            SQLALCHEMY_DATABASE_URL += "?sslmode=require"
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
     # Only use check_same_thread for SQLite
-    connect_args={"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
+    connect_args={"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {},
+    # Good for serverless reconnections
+    pool_pre_ping=True
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
