@@ -6,7 +6,7 @@
             "use": "@vercel/python"
         },
         {
-            "src": "hirewise-landing/package.json",
+            "src": "package.json",
             "use": "@vercel/next"
         }
     ],
@@ -41,11 +41,11 @@
         },
         {
             "src": "/static/(.*)",
-            "dest": "/app/static/$1"
+            "dest": "/backend/static/$1"
         },
         {
             "src": "/(.*)",
-            "dest": "hirewise-landing/$1"
+            "dest": "/$1"
         }
     ]
 }
