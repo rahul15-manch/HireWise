@@ -10,7 +10,10 @@ from passlib.context import CryptContext
 from backend import models, database
 
 # Database Setup
-models.Base.metadata.create_all(bind=database.engine)
+try:
+    models.Base.metadata.create_all(bind=database.engine)
+except Exception as e:
+    print(f"Database setup error: {e}")
 
 app = FastAPI()
 

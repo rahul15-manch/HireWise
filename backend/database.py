@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 import os
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hirewise.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/hirewise.db")
 
 # If using PostgreSQL with a 'postgres://' URL (common on some platforms), 
 # fix it to 'postgresql://' for SQLAlchemy compatibility.
