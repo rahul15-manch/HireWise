@@ -13,6 +13,11 @@ if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
 
 # Re-encode specifically for PostgreSQL or add SSL if needed
 if "postgresql" in SQLALCHEMY_DATABASE_URL:
+    # 1. Supabase specific fix: Use Transaction Pooler (port 6543) for serverless
+    if "supabase.co" in SQLALCHEMY_DATABASE_URL and ":5432" in SQLALCHEMY_DATABASE_URL:
+        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(":5432", ":6543")
+    
+    # 2. Add SSL require
     if "sslmode" not in SQLALCHEMY_DATABASE_URL:
         if "?" in SQLALCHEMY_DATABASE_URL:
             SQLALCHEMY_DATABASE_URL += "&sslmode=require"
