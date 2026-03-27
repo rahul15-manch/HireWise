@@ -51,14 +51,6 @@ async def debug_info():
         info["template_load"] = f"FAILED: {str(e)}"
         info["traceback"] = traceback.format_exc()
     return info
-        from jinja2 import Environment, FileSystemLoader
-        env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
-        tmpl = env.get_template("login.html")
-        info["template_load"] = "SUCCESS"
-    except Exception as e:
-        info["template_load"] = f"FAILED: {str(e)}"
-        info["traceback"] = traceback.format_exc()
-    return info
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
