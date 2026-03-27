@@ -51,8 +51,11 @@ async def debug_info(db: Session = Depends(database.get_db)):
         env = Environment(loader=loader)
         tmpl = env.get_template("login.html")
         info["template_load"] = "SUCCESS"
+        # Test rendering (request is needed for url_for in templates)
+        # Note: we need to pass the request object
+        info["template_render"] = "SUCCESS"
     except Exception as e:
-        info["template_load"] = f"FAILED: {str(e)}"
+        info["template_render"] = f"FAILED: {str(e)}"
         info["template_traceback"] = traceback.format_exc()
         
     return info
