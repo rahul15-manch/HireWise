@@ -19,7 +19,7 @@ export default function Home() {
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
             <a href="#testimonials" className="hover:text-white transition-colors">Testimonials</a>
-            <a href="http://localhost:8000/login" className="px-5 py-2 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all decoration-none">
+            <a href="/login" className="px-5 py-2 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all decoration-none">
               Launch App
             </a>
           </div>
