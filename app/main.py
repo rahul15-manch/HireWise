@@ -33,7 +33,10 @@ async def debug_info(db: Session = Depends(database.get_db)):
         "cwd": os.getcwd(),
         "files_in_app": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "MISSING",
         "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
-        "DATABASE_URL_SET": os.getenv("DATABASE_URL") is not None
+        "DATABASE_URL_SET": os.getenv("DATABASE_URL") is not None,
+        "GEMINI_API_KEY_SET": os.getenv("GEMINI_API_KEY") is not None,
+        "GROQ_API_KEY_SET": os.getenv("GROQ_API_KEY") is not None,
+        "SECRET_KEY_SET": os.getenv("SECRET_KEY") is not None,
     }
     
     # 1. Test Database
