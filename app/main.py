@@ -25,26 +25,9 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @app.get("/debug")
 async def debug_info():
-    import traceback
-    import os
-    info = {
-        "base_dir": BASE_DIR,
-        "cwd": os.getcwd(),
-        "files_in_app": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "MISSING",
-        "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
-    }
-    try:
-        from app import models, database
-        info["database_url_set"] = os.getenv("DATABASE_URL") is not None
-        # Try to render a simple template string to test Jinja2
-        return info
-    except Exception as e:
-        return {"error": str(e), "traceback": traceback.format_exc()}
-
-@app.get("/debug")
-async def debug_info():
     """Temporary debug endpoint to diagnose production issues."""
     import traceback
+    import os
     info = {
         "base_dir": BASE_DIR,
         "cwd": os.getcwd(),
@@ -53,11 +36,21 @@ async def debug_info():
         "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
         "static_dir": os.path.join(BASE_DIR, "static"),
         "static_exists": os.path.exists(os.path.join(BASE_DIR, "static")),
+        "DATABASE_URL_SET": os.getenv("DATABASE_URL") is not None
     }
     if os.path.exists(os.path.join(BASE_DIR, "templates")):
         info["templates_contents"] = os.listdir(os.path.join(BASE_DIR, "templates"))
     try:
+        from app import models, database
         # Test template rendering
+        from jinja2 import Environment, FileSystemLoader
+        env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
+        tmpl = env.get_template("login.html")
+        info["template_load"] = "SUCCESS"
+    except Exception as e:
+        info["template_load"] = f"FAILED: {str(e)}"
+        info["traceback"] = traceback.format_exc()
+    return info
         from jinja2 import Environment, FileSystemLoader
         env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
         tmpl = env.get_template("login.html")
