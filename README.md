@@ -1,6 +1,8 @@
-<div align="center">
-
-<img src="app/static/img/logo.png" alt="HireWise Logo" height="200"/>
+<p align="center">
+  <a href="https://github.com/rahul15-manch/HireWise">
+    <img src="https://raw.githubusercontent.com/rahul15-manch/HireWise/main/public/logo.png" width="200"/>
+  </a>
+</p>
 
 ### AI-Powered Recruitment & Interview Assessment Platform
 
