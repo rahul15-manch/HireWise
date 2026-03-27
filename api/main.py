@@ -23,6 +23,32 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
+@app.get("/debug")
+async def debug_info():
+    """Temporary debug endpoint to diagnose production issues."""
+    import traceback
+    info = {
+        "base_dir": BASE_DIR,
+        "cwd": os.getcwd(),
+        "base_dir_contents": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "NOT_FOUND",
+        "templates_dir": os.path.join(BASE_DIR, "templates"),
+        "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
+        "static_dir": os.path.join(BASE_DIR, "static"),
+        "static_exists": os.path.exists(os.path.join(BASE_DIR, "static")),
+    }
+    if os.path.exists(os.path.join(BASE_DIR, "templates")):
+        info["templates_contents"] = os.listdir(os.path.join(BASE_DIR, "templates"))
+    try:
+        # Test template rendering
+        from jinja2 import Environment, FileSystemLoader
+        env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
+        tmpl = env.get_template("login.html")
+        info["template_load"] = "SUCCESS"
+    except Exception as e:
+        info["template_load"] = f"FAILED: {str(e)}"
+        info["traceback"] = traceback.format_exc()
+    return info
+
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def verify_password(plain_password, hashed_password):
