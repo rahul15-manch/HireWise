@@ -15,10 +15,13 @@ try:
 except Exception as e:
     print(f"Database setup error: {e}")
 
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
-templates = Jinja2Templates(directory="backend/templates")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
