@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from backend import models, database
+from app import models, database
 
 # Database Setup
 try:
@@ -22,6 +22,32 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+@app.get("/debug")
+async def debug_info():
+    """Temporary debug endpoint to diagnose production issues."""
+    import traceback
+    info = {
+        "base_dir": BASE_DIR,
+        "cwd": os.getcwd(),
+        "base_dir_contents": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "NOT_FOUND",
+        "templates_dir": os.path.join(BASE_DIR, "templates"),
+        "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
+        "static_dir": os.path.join(BASE_DIR, "static"),
+        "static_exists": os.path.exists(os.path.join(BASE_DIR, "static")),
+    }
+    if os.path.exists(os.path.join(BASE_DIR, "templates")):
+        info["templates_contents"] = os.listdir(os.path.join(BASE_DIR, "templates"))
+    try:
+        # Test template rendering
+        from jinja2 import Environment, FileSystemLoader
+        env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
+        tmpl = env.get_template("login.html")
+        info["template_load"] = "SUCCESS"
+    except Exception as e:
+        info["template_load"] = f"FAILED: {str(e)}"
+        info["traceback"] = traceback.format_exc()
+    return info
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -145,10 +171,11 @@ async def create_interview(
 
     # Handle Resume Upload and Text Extraction
     if resume_file and resume_file.filename:
-        os.makedirs("backend/static/uploads", exist_ok=True)
+        upload_dir = os.path.join("/tmp", "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
         file_ext = os.path.splitext(resume_file.filename)[1]
         saved_resume_filename = f"resume_{uuid.uuid4()}{file_ext}"
-        resume_path = os.path.join("backend/static/uploads", saved_resume_filename)
+        resume_path = os.path.join(upload_dir, saved_resume_filename)
         
         with open(resume_path, "wb") as buffer:
             shutil.copyfileobj(resume_file.file, buffer)
@@ -214,12 +241,13 @@ async def create_interview(
     saved_pdf_filename = None
     if pdf_file and pdf_file.filename:
         # Ensure uploads directory exists
-        os.makedirs("backend/static/uploads", exist_ok=True)
+        upload_dir = os.path.join("/tmp", "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
         
         # Generate unique filename
         file_ext = os.path.splitext(pdf_file.filename)[1]
         saved_pdf_filename = f"{uuid.uuid4()}{file_ext}"
-        file_path = os.path.join("backend/static/uploads", saved_pdf_filename)
+        file_path = os.path.join(upload_dir, saved_pdf_filename)
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(pdf_file.file, buffer)

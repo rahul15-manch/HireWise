@@ -4,48 +4,16 @@
         {
             "src": "api/index.py",
             "use": "@vercel/python"
-        },
-        {
-            "src": "package.json",
-            "use": "@vercel/next"
         }
     ],
     "routes": [
         {
-            "src": "/api/(.*)",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/login",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/signup",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/dashboard",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/logout",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/interview/(.*)",
-            "dest": "api/index.py"
-        },
-        {
-            "src": "/admin/(.*)",
-            "dest": "api/index.py"
-        },
-        {
             "src": "/static/(.*)",
-            "dest": "/api/static/$1"
+            "dest": "/app/static/$1"
         },
         {
             "src": "/(.*)",
-            "dest": "/$1"
+            "dest": "api/index.py"
         }
     ]
 }
