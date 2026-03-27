@@ -24,32 +24,37 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @app.get("/debug")
-async def debug_info():
-    """Temporary debug endpoint to diagnose production issues."""
+async def debug_info(db: Session = Depends(database.get_db)):
     import traceback
     import os
+    from sqlalchemy import text
     info = {
         "base_dir": BASE_DIR,
         "cwd": os.getcwd(),
-        "base_dir_contents": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "NOT_FOUND",
-        "templates_dir": os.path.join(BASE_DIR, "templates"),
+        "files_in_app": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "MISSING",
         "templates_exists": os.path.exists(os.path.join(BASE_DIR, "templates")),
-        "static_dir": os.path.join(BASE_DIR, "static"),
-        "static_exists": os.path.exists(os.path.join(BASE_DIR, "static")),
         "DATABASE_URL_SET": os.getenv("DATABASE_URL") is not None
     }
-    if os.path.exists(os.path.join(BASE_DIR, "templates")):
-        info["templates_contents"] = os.listdir(os.path.join(BASE_DIR, "templates"))
+    
+    # 1. Test Database
     try:
-        from app import models, database
-        # Test template rendering
+        db.execute(text("SELECT 1"))
+        info["database_connection"] = "SUCCESS"
+    except Exception as e:
+        info["database_connection"] = f"FAILED: {str(e)}"
+        info["database_traceback"] = traceback.format_exc()
+        
+    # 2. Test Templates
+    try:
         from jinja2 import Environment, FileSystemLoader
-        env = Environment(loader=FileSystemLoader(os.path.join(BASE_DIR, "templates")))
+        loader = FileSystemLoader(os.path.join(BASE_DIR, "templates"))
+        env = Environment(loader=loader)
         tmpl = env.get_template("login.html")
         info["template_load"] = "SUCCESS"
     except Exception as e:
         info["template_load"] = f"FAILED: {str(e)}"
-        info["traceback"] = traceback.format_exc()
+        info["template_traceback"] = traceback.format_exc()
+        
     return info
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
