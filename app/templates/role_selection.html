@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Role | HireWise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --hw-blue: #0077b5;
+            --li-bg: #f3f2ef;
+            --li-border: #e0e0e0;
+            --li-text: #000000;
+            --li-text-secondary: #666666;
+            --li-card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--li-bg);
+            color: var(--li-text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .selection-card {
+            background: var(--li-card-bg);
+            width: 480px;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--li-border);
+            text-align: center;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .logo-container {
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            max-width: 180px;
+            height: auto;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+
+        p.subtitle {
+            font-size: 1rem;
+            color: var(--li-text-secondary);
+            margin-bottom: 2.5rem;
+        }
+
+        .roles-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-option {
+            border: 2px solid var(--li-border);
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .role-option:hover {
+            border-color: var(--hw-blue);
+            background-color: rgba(0, 119, 181, 0.02);
+            transform: translateY(-4px);
+        }
+
+        .role-option.selected {
+            border-color: var(--hw-blue);
+            background-color: rgba(0, 119, 181, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 119, 181, 0.15);
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            color: var(--li-text-secondary);
+            transition: color 0.3s;
+        }
+
+        .role-option.selected .role-icon {
+            color: var(--hw-blue);
+        }
+
+        .role-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--li-text);
+        }
+
+        .role-description {
+            font-size: 0.8rem;
+            color: var(--li-text-secondary);
+            line-height: 1.4;
+        }
+
+        .selected-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--hw-blue);
+            font-size: 1.2rem;
+            display: none;
+        }
+
+        .role-option.selected .selected-check {
+            display: block;
+        }
+
+        #submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--hw-blue);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.5;
+            pointer-events: none;
+            margin-top: 1rem;
+        }
+
+        #submit-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
+        }
+
+        #submit-btn.active:hover {
+            background-color: #005a8a;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="selection-card">
+        <div class="logo-container">
+            <img src="/static/img/logo.png" alt="HireWise Logo" class="brand-logo">
+        </div>
+
+        <h2>Welcome! One last step.</h2>
+        <p class="subtitle">To personalize your experience, please tell us how you'll be using HireWise.</p>
+
+        <form id="role-form" action="/auth/google/complete" method="post">
+            <input type="hidden" name="role" id="role-input">
+
+            <div class="roles-container">
+                <div class="role-option" onclick="selectRole('recruiter')">
+                    <i class="fas fa-briefcase role-icon"></i>
+                    <div class="role-name">Recruiter</div>
+                    <div class="role-description">I want to create interviews and hire talent.</div>
+                    <i class="fas fa-check-circle selected-check"></i>
+                </div>
+
+                <div class="role-option" onclick="selectRole('candidate')">
+                    <i class="fas fa-user-graduate role-icon"></i>
+                    <div class="role-name">Candidate</div>
+                    <div class="role-description">I want to take interviews and find roles.</div>
+                    <i class="fas fa-check-circle selected-check"></i>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">Complete Setup</button>
+        </form>
+    </div>
+
+    <script>
+        function selectRole(role) {
+            // Update UI
+            document.querySelectorAll('.role-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.textContent.toLowerCase().includes(role)) {
+                    opt.classList.add('selected');
+                }
+            });
+
+            // Update Input
+            document.getElementById('role-input').value = role;
+
+            // Activate Button
+            const btn = document.getElementById('submit-btn');
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

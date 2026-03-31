@@ -102,20 +102,49 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
     email = user_info.get('email')
     full_name = user_info.get('name')
 
-    # Check if user exists
-    user = db.query(models.User).filter(models.User.email == email).first()
+    # If user exists, log them in
+    if user:
+        response = RedirectResponse(url="/dashboard")
+        response.set_cookie(key="user_email", value=email, httponly=True)
+        return response
 
+    # New user: store info in session and redirect to role selection
+    request.session['google_user'] = {
+        'email': email,
+        'name': full_name
+    }
+    return RedirectResponse(url="/auth/google/role-selection")
+
+@app.get("/auth/google/role-selection", response_class=HTMLResponse)
+async def google_role_selection(request: Request):
+    if 'google_user' not in request.session:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse(request, "role_selection.html")
+
+@app.post("/auth/google/complete")
+async def google_auth_complete(request: Request, role: str = Form(...), db: Session = Depends(database.get_db)):
+    google_user = request.session.get('google_user')
+    if not google_user:
+        return RedirectResponse(url="/login?error=Session+expired")
+
+    email = google_user['email']
+    name = google_user['name']
+
+    # Final check just in case
+    user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
-        # Auto-create user for Google OAuth
         user = models.User(
             email=email,
-            full_name=full_name,
-            hashed_password=None, # Indicating OAuth user
-            role="candidate"
+            full_name=name,
+            hashed_password=None, # OAuth user
+            role=role.lower() # recruiter or candidate
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+
+    # Clear temp session
+    request.session.pop('google_user', None)
 
     response = RedirectResponse(url="/dashboard")
     response.set_cookie(key="user_email", value=email, httponly=True)
