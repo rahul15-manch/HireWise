@@ -681,3 +681,16 @@ async def create_admin(
     db.commit()
     return RedirectResponse(url="/login?msg=Admin+account+created", status_code=303)
 
+
+@app.get("/debug")
+async def debug_info():
+    """Health check and debug info for deployment troubleshooting."""
+    import sys
+    return {
+        "status": "ok",
+        "python_version": sys.version,
+        "cwd": os.getcwd(),
+        "db_url": str(database.engine.url),
+        "templates_dir": os.path.join(BASE_DIR, "templates"),
+        "templates_exist": os.path.isdir(os.path.join(BASE_DIR, "templates")),
+    }
