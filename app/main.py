@@ -107,7 +107,7 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
 
     # If user exists, log them in
     if user:
-        response = RedirectResponse(url="/dashboard")
+        response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key="user_email", value=email, httponly=True)
         return response
 
@@ -116,7 +116,7 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
         'email': email,
         'name': full_name
     }
-    return RedirectResponse(url="/auth/google/role-selection")
+    return RedirectResponse(url="/auth/google/role-selection", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/auth/google/role-selection", response_class=HTMLResponse)
 async def google_role_selection(request: Request):
@@ -149,7 +149,7 @@ async def google_auth_complete(request: Request, role: str = Form(...), db: Sess
     # Clear temp session
     request.session.pop('google_user', None)
 
-    response = RedirectResponse(url="/dashboard")
+    response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user_email", value=email, httponly=True)
     return response
 
@@ -225,7 +225,7 @@ async def create_interview(
     recruiter = db.query(models.User).filter(models.User.email == user_email).first()
     
     if not recruiter or recruiter.role != "recruiter":
-        return RedirectResponse(url="/dashboard") # Unauthorized
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER) # Unauthorized
 
     candidate = db.query(models.User).filter(models.User.email == candidate_email, models.User.role == "candidate").first()
     if not candidate:
@@ -673,7 +673,7 @@ async def admin_panel(request: Request, db: Session = Depends(database.get_db)):
         return RedirectResponse(url="/login")
     admin = db.query(models.User).filter(models.User.email == user_email).first()
     if not admin or admin.role != "admin":
-        return RedirectResponse(url="/dashboard")
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
     all_users = db.query(models.User).filter(models.User.role != "admin").order_by(models.User.id).all()
     all_interviews = db.query(models.Interview).all()
