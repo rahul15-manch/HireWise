@@ -549,7 +549,7 @@
         let currentQIndex = 0;
         let recognition;
         let synth = window.speechSynthesis;
-        let finalTranscript = '';
+        let sttBaseline = '';
         let speechGen = 0; // generation counter — incremented on each new speakQuestion call
         let editor; // Ace Editor instance
 
@@ -862,16 +862,28 @@
             recognition.lang = 'en-US';
             recognition.maxAlternatives = 1;
 
+            recognition.onstart = () => {
+                const input = document.getElementById('answer-input');
+                // Capture current textarea value as baseline for this segment
+                sttBaseline = input.value;
+                if (sttBaseline && !sttBaseline.endsWith(' ')) {
+                    sttBaseline += ' ';
+                }
+            };
+
             recognition.onresult = (event) => {
-                let interim = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                let segmentTranscript = '';
+                for (let i = 0; i < event.results.length; ++i) {
+                    segmentTranscript += event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
-                    } else {
-                        interim += event.results[i][0].transcript;
+                        segmentTranscript += ' ';
                     }
                 }
-                document.getElementById('answer-input').value = finalTranscript + interim;
+                const input = document.getElementById('answer-input');
+                input.value = sttBaseline + segmentTranscript;
+
+                // Auto-scroll to bottom
+                input.scrollTop = input.scrollHeight;
                 resetSilenceTimer();
             };
 
@@ -923,7 +935,6 @@
                 toggleBtn.innerHTML = '<i class="fas fa-keyboard"></i> Switch to Code Editor';
             }
 
-            finalTranscript = '';
 
             setTimeout(() => {
                 if (myGen !== speechGen) return; // superseded — another question started
