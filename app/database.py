@@ -11,6 +11,22 @@ def robust_fix_url(url):
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
     
+    # Handle special characters in password (like #, !, %)
+    # Standard urlparse can fail if the password contains '#'
+    try:
+        from urllib.parse import quote_plus
+        if "://" in url and "@" in url:
+            scheme, rest = url.split("://", 1)
+            # Split from the right to handle '@' in passwords if any (though rare)
+            # and to correctly identify the start of the host
+            auth, host_path = rest.rsplit("@", 1)
+            if ":" in auth:
+                user, password = auth.split(":", 1)
+                # Reconstruct with encoded password
+                url = f"{scheme}://{user}:{quote_plus(password)}@{host_path}"
+    except Exception as e:
+        print(f"URL encoding warning: {e}")
+    
     # Supabase specific: use port 6543 for transaction mode if it's a supabase host
     # This helps avoid 'Max Clients' errors in serverless environments
     if "supabase.co" in url and ":5432" in url:
