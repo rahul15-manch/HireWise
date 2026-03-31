@@ -22,6 +22,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
 
+import traceback
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "traceback": traceback.format_exc()}
+    )
+
 # Add SessionMiddleware for OAuth
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "supersecretkey"))
 
@@ -736,3 +746,16 @@ async def create_admin(
     db.add(admin_user)
     db.commit()
     return RedirectResponse(url="/login?msg=Admin+account+created", status_code=303)
+
+@app.get("/debug")
+async def debug_info():
+    """Health check and debug info for deployment troubleshooting."""
+    import sys
+    return {
+        "status": "ok",
+        "python_version": sys.version,
+        "cwd": os.getcwd(),
+        "db_url": str(database.engine.url),
+        "templates_dir": os.path.join(BASE_DIR, "templates"),
+        "templates_exist": os.path.isdir(os.path.join(BASE_DIR, "templates")),
+    }
