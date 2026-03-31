@@ -59,13 +59,13 @@ async def read_root(request: Request):
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 @app.post("/login")
 async def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Invalid credentials"})
     
     # Successful Login (Redirect to Dashboard placeholder)
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
@@ -74,7 +74,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
 
 @app.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request):
-    return templates.TemplateResponse("signup.html", {"request": request})
+    return templates.TemplateResponse(request, "signup.html")
 
 @app.post("/signup")
 async def signup(
@@ -87,7 +87,7 @@ async def signup(
 ):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
-        return templates.TemplateResponse("signup.html", {"request": request, "error": "Email already registered"})
+        return templates.TemplateResponse(request, "signup.html", {"error": "Email already registered"})
     
     hashed_password = get_password_hash(password)
     new_user = models.User(full_name=full_name, email=email, hashed_password=hashed_password, role=role)
@@ -116,7 +116,7 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
         interviews = db.query(models.Interview).filter(models.Interview.candidate_id == user.id).all()
 
     msg = request.query_params.get("msg")
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user, "interviews": interviews, "msg": msg, "json": json})
+    return templates.TemplateResponse(request, "dashboard.html", {"user": user, "interviews": interviews, "msg": msg, "json": json})
 
 import google.generativeai as genai
 import os
@@ -148,7 +148,7 @@ async def create_interview(
 
     candidate = db.query(models.User).filter(models.User.email == candidate_email, models.User.role == "candidate").first()
     if not candidate:
-        return templates.TemplateResponse("dashboard.html", {"request": request, "user": recruiter, "interviews": [], "error": "Candidate not found!"})
+        return templates.TemplateResponse(request, "dashboard.html", {"user": recruiter, "interviews": [], "error": "Candidate not found!"})
 
     questions_list = []
     resume_text = ""
@@ -338,7 +338,7 @@ async def get_interview_page(request: Request, interview_id: int, db: Session = 
     if not user or interview.candidate_id != user.id:
         return HTMLResponse("Unauthorized", status_code=403)
 
-    return templates.TemplateResponse("interview.html", {"request": request, "interview": interview})
+    return templates.TemplateResponse(request, "interview.html", {"interview": interview})
 
 @app.post("/interview/{interview_id}/submit")
 async def submit_answer(interview_id: int, request: Request, db: Session = Depends(database.get_db)):
@@ -603,8 +603,7 @@ async def admin_panel(request: Request, db: Session = Depends(database.get_db)):
         candidate_interviews.setdefault(iv.candidate_id, []).append(iv)
 
     msg = request.query_params.get("msg")
-    return templates.TemplateResponse("admin.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin.html", {
         "admin": admin,
         "users": all_users,
         "candidate_interviews": candidate_interviews,
