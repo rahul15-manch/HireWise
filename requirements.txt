@@ -12,3 +12,5 @@ pypdf
 argon2-cffi
 python-dotenv
 groq
+authlib
+httpx

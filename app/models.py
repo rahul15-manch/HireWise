@@ -8,7 +8,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    hashed_password = Column(String, nullable=True)
     role = Column(String, default="candidate")
     interviews_created = relationship("Interview", back_populates="recruiter", foreign_keys="Interview.recruiter_id")
     interviews_assigned = relationship("Interview", back_populates="candidate", foreign_keys="Interview.candidate_id")

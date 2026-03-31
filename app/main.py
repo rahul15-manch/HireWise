@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from app import models, database
+from starlette.middleware.sessions import SessionMiddleware
+from authlib.integrations.starlette_client import OAuth
 
 # Database Setup
 try:
@@ -20,8 +22,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
 
+# Add SessionMiddleware for OAuth
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "supersecretkey"))
+
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+# OAuth Configuration
+oauth = OAuth()
+oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
 
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -59,7 +76,47 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     
     # Successful Login (Redirect to Dashboard placeholder)
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(key="user_email", value=user.email) # Simple Session
+    response.set_cookie(key="user_email", value=user.email, httponly=True)
+    return response
+
+@app.get("/auth/google/login")
+async def google_login(request: Request):
+    # Use the configured redirect URI from .env if available, otherwise build it
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", request.url_for('auth_google_callback'))
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/auth/google/callback")
+async def auth_google_callback(request: Request, db: Session = Depends(database.get_db)):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except Exception as e:
+        print(f"OAuth Error: {e}")
+        return RedirectResponse(url="/login?error=OAuth+failed")
+
+    user_info = token.get('userinfo')
+    if not user_info:
+        return RedirectResponse(url="/login?error=Failed+to+get+user+info")
+
+    email = user_info.get('email')
+    full_name = user_info.get('name')
+
+    # Check if user exists
+    user = db.query(models.User).filter(models.User.email == email).first()
+
+    if not user:
+        # Auto-create user for Google OAuth
+        user = models.User(
+            email=email,
+            full_name=full_name,
+            hashed_password=None, # Indicating OAuth user
+            role="candidate"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    response = RedirectResponse(url="/dashboard")
+    response.set_cookie(key="user_email", value=email, httponly=True)
     return response
 
 @app.get("/signup", response_class=HTMLResponse)
