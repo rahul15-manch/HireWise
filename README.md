@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/rahul15-manch/HireWise">
-    <img src="https://raw.githubusercontent.com/rahul15-manch/HireWise/main/public/logo.png" width="200"/>
+    <img src="https://raw.githubusercontent.com/rahul15-manch/HireWise/main/app/static/img/logo.png" width="200"/>
   </a>
 </p>
 
