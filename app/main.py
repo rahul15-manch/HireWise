@@ -99,7 +99,7 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
     if not user_info:
         return RedirectResponse(url="/login?error=Failed+to+get+user+info")
 
-    email = user_info.get('email')
+    email = user_info.get('email').lower()
     full_name = user_info.get('name')
 
     # Check if user exists
@@ -130,7 +130,7 @@ async def google_auth_complete(request: Request, role: str = Form(...), db: Sess
     if not google_user:
         return RedirectResponse(url="/login?error=Session+expired")
 
-    email = google_user['email']
+    email = google_user['email'].lower()
     name = google_user['name']
 
     # Final check just in case
