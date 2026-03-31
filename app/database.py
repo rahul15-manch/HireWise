@@ -2,57 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-import os
-
-from urllib.parse import quote_plus, urlparse, urlunparse, unquote
-
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/hirewise.db")
-
-def robust_fix_url(url):
-    if not url or url.startswith("sqlite"):
-        return url
-    
-    # 1. Correct dialect
-    if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
-    
-    # 2. Handle special characters in password
-    try:
-        # We need to split manually because urlparse might fail if # is in the password
-        if "@" in url and "://" in url:
-            prefix, rest = url.split("://", 1)
-            auth, host_path = rest.rsplit("@", 1)
-            if ":" in auth:
-                user, pwd = auth.split(":", 1)
-                # Unquote in case it's partially encoded, then quote fully
-                encoded_pwd = quote_plus(unquote(pwd))
-                url = f"{prefix}://{user}:{encoded_pwd}@{host_path}"
-    except Exception as e:
-        print(f"URL fix error: {e}")
-        
-    return url
-
-SQLALCHEMY_DATABASE_URL = robust_fix_url(SQLALCHEMY_DATABASE_URL)
-
-# Re-encode specifically for PostgreSQL or add SSL if needed
-if "postgresql" in SQLALCHEMY_DATABASE_URL:
-    # 1. Supabase specific fix: Use Transaction Pooler (port 6543) for serverless
-    if "supabase.co" in SQLALCHEMY_DATABASE_URL and ":5432" in SQLALCHEMY_DATABASE_URL:
-        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(":5432", ":6543")
-    
-    # 2. Add SSL require
-    if "sslmode" not in SQLALCHEMY_DATABASE_URL:
-        if "?" in SQLALCHEMY_DATABASE_URL:
-            SQLALCHEMY_DATABASE_URL += "&sslmode=require"
-        else:
-            SQLALCHEMY_DATABASE_URL += "?sslmode=require"
+SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/hirewise.db"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    # Only use check_same_thread for SQLite
-    connect_args={"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {},
-    # Good for serverless reconnections
-    pool_pre_ping=True
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

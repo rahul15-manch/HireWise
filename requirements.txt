@@ -12,4 +12,3 @@ pypdf
 argon2-cffi
 python-dotenv
 groq
-psycopg2-binary
