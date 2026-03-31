@@ -16,3 +16,4 @@ authlib
 httpx
 itsdangerous
 cryptography
+psycopg2-binary
