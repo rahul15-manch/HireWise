@@ -14,3 +14,5 @@ python-dotenv
 groq
 authlib
 httpx
+itsdangerous
+cryptography
