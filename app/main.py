@@ -503,7 +503,7 @@ async def create_mock_interview(
     db.commit()
     db.refresh(new_interview)
     
-    return RedirectResponse(url=f"/interview/{new_interview.id}", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/dashboard?msg=Mock+interview+created+successfully", status_code=status.HTTP_303_SEE_OTHER)
     
 @app.post("/interview/{interview_id}/review")
 async def review_interview(
