@@ -62,9 +62,7 @@ def get_current_user(request: Request, db: Session = Depends(database.get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # If this is the main app entry but we want landing page at root,
-    # we can redirect to login or just keep it as is if Vercel handles routing.
-    return RedirectResponse(url="/login")
+    return templates.TemplateResponse(request, "landing.html")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -83,12 +81,28 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
 
 @app.get("/auth/google/login")
 async def google_login(request: Request):
-    # Use the configured redirect URI from .env if available, otherwise build it
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", request.url_for('auth_google_callback'))
+    # Use the configured redirect URI from .env if available
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    
+    # Support local development (HTTP)
+    is_local = "localhost" in str(request.base_url) or "127.0.0.1" in str(request.base_url)
+    
+    if is_local:
+        os.environ['AUTHLIB_INSECURE_TRANSPORT'] = 'true'
+        # Force local callback for local dev regardless of .env or request host detection issues
+        redirect_uri = str(request.url_for('auth_google_callback'))
+        if "https://" in redirect_uri:
+            redirect_uri = redirect_uri.replace("https://", "http://")
+    elif not redirect_uri:
+        redirect_uri = request.url_for('auth_google_callback')
+
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/auth/google/callback")
 async def auth_google_callback(request: Request, db: Session = Depends(database.get_db)):
+    if "localhost" in str(request.base_url) or "127.0.0.1" in str(request.base_url):
+        os.environ['AUTHLIB_INSECURE_TRANSPORT'] = 'true'
+        
     try:
         token = await oauth.google.authorize_access_token(request)
     except Exception as e:
@@ -191,13 +205,68 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
         return response
 
     interviews = []
+    stats = {}
     if user.role == "recruiter":
         interviews = db.query(models.Interview).filter(models.Interview.recruiter_id == user.id).all()
+        # Ensure candidate details are loaded
+        for iv in interviews:
+             iv.candidate = db.query(models.User).filter(models.User.id == iv.candidate_id).first()
+             iv.candidate_name = iv.candidate.full_name if iv.candidate else "Unknown"
+
+        stats = {
+            "total": len(interviews),
+            "screening": len([i for i in interviews if i.status == "completed"]),
+            "shortlisted": len([i for i in interviews if i.status == "cleared"]),
+            "rejected": len([i for i in interviews if i.status == "rejected"]),
+            "pipeline": {
+                "Applied": [i for i in interviews if i.status == "pending"],
+                "Screening": [i for i in interviews if i.status == "completed"],
+                "Shortlisted": [i for i in interviews if i.status == "cleared"],
+                "Rejected": [i for i in interviews if i.status == "rejected"],
+            }
+        }
     else:
         interviews = db.query(models.Interview).filter(models.Interview.candidate_id == user.id).all()
+        
+        # Calculate readiness score (average of non-zero scores)
+        scores = []
+        for i in interviews:
+            if i.evaluation:
+                try:
+                    eval_data = json.loads(i.evaluation)
+                    if eval_data.get("score"):
+                        scores.append(eval_data["score"])
+                except:
+                    continue
+        avg_score = sum(scores) / len(scores) if scores else 0
+        
+        # Aggregate skills from evaluation strengths
+        skills = {}
+        for i in interviews:
+            if i.evaluation:
+                try:
+                    eval_data = json.loads(i.evaluation)
+                    for s in eval_data.get("strengths", []):
+                        skills[s] = skills.get(s, 0) + 1
+                except:
+                    continue
+        
+        stats = {
+            "readiness_score": int(avg_score),
+            "total_interviews": len(interviews),
+            "cleared": len([i for i in interviews if i.status == "cleared"]),
+            "skills": sorted(skills.items(), key=lambda x: x[1], reverse=True)[:5],
+            "streak": 3 # Placeholder
+        }
 
     msg = request.query_params.get("msg")
-    return templates.TemplateResponse(request, "dashboard.html", {"user": user, "interviews": interviews, "msg": msg, "json": json})
+    return templates.TemplateResponse(request, "dashboard.html", {
+        "user": user, 
+        "interviews": interviews, 
+        "stats": stats,
+        "msg": msg, 
+        "json": json
+    })
 
 import google.generativeai as genai
 import os
@@ -208,6 +277,77 @@ from groq import Groq
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None):
+    try:
+        chat = groq_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a world-class senior technical interviewer at a top-tier company like Google, OpenAI, or Meta. "
+                        "You specialize in evaluating candidates through deep, structured, and real-world interview questions.\n\n"
+                        "Your responsibilities:\n"
+                        "- Generate highly relevant, challenging, and realistic interview questions.\n"
+                        "- Personalize questions based on the candidate's resume (if provided).\n"
+                        "- Focus on real-world problem solving, not generic textbook questions.\n"
+                        "- Reflect current industry trends (2025+), including AI, system design, scalability, and practical implementation.\n\n"
+                        "Strict Rules:\n"
+                        "- Output ONLY valid JSON.\n"
+                        "- No explanations outside JSON.\n"
+                        "- Ensure questions are clear, non-repetitive, and interview-ready.\n"
+                        "- Avoid vague or generic questions.\n\n"
+                        "Output Format:\n"
+                        "{\n"
+                        "  \"candidate_summary\": \"Concise professional summary based on resume OR null\",\n"
+                        "  \"questions\": [\n"
+                        "    \"Question 1\", \"Question 2\", \"Question 3\", \"Question 4\", \"Question 5\", \"Question 6\", \"Question 7\"\n"
+                        "  ]\n"
+                        "}"
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Generate exactly 7 high-quality interview questions for a {difficulty}-level {job_role} candidate.\n\n"
+                        f"Resume:\n"
+                        f"{resume_text[:4000] if resume_text else 'No resume provided.'}\n\n"
+                        "Instructions:\n"
+                        f"- Strictly match {difficulty} difficulty (Easy = fundamentals, Medium = applied, Hard = deep/system design).\n"
+                        "- If resume is provided:\n"
+                        "  → Ask personalized, project-based, and tool-specific questions.\n"
+                        "  → Probe decision-making, trade-offs, and real implementation challenges.\n"
+                        "- If no resume:\n"
+                        "  → Focus on scenario-based and real-world problem-solving questions.\n\n"
+                        "Question Mix:\n"
+                        "- 2 conceptual questions\n"
+                        "- 2 coding/problem-solving questions\n"
+                        "- 2 real-world/scenario-based questions\n"
+                        "- 1 behavioral-technical question\n\n"
+                        "Make questions feel like:\n"
+                        "- FAANG-style interviews\n"
+                        "- Practical, not theoretical\n"
+                        "- Increasing slightly in difficulty\n\n"
+                        "Return ONLY valid JSON."
+                    )
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        result = json.loads(chat.choices[0].message.content)
+        return result.get("questions", []), result.get("candidate_summary", "")
+    except Exception as e:
+        print(f"Groq Question Generation Error: {e}")
+        fallback_questions = [
+            f"Walk me through how you would design a scalable {job_role} system from scratch.",
+            f"Describe a challenging bug you encountered in a {difficulty}-level project. How did you debug it?",
+            f"What are the key performance trade-offs you consider when working as a {job_role}?",
+            "How do you ensure code quality in a fast-moving team?",
+            "Tell me about a time you had to learn a new technology under time pressure.",
+        ]
+        return fallback_questions, None
 
 @app.post("/interviews/create")
 async def create_interview(
@@ -254,52 +394,7 @@ async def create_interview(
             print(f"Resume Extraction Error: {e}")
 
     if generate_ai:
-        try:
-            chat = groq_client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a world-class senior technical interviewer and recruiter at a top-tier tech company. "
-                            "Your job is to generate high-quality, personalized interview questions. "
-                            "If a candidate's resume is provided, analyze it to tailor questions to their specific experience and skills. "
-                            "If no resume is provided, generate sharp, scenario-based questions based on the job role and difficulty. "
-                            "Return ONLY a JSON object with two keys: 'candidate_summary' (a brief professional summary, or null if no resume) and 'questions' (a list of 7 question strings)."
-                        )
-                    },
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Generate exactly 7 high-quality technical interview questions for a {difficulty}-level {job_role} candidate.\n\n"
-                            f"Resume Context (use this to personalize questions if provided):\n"
-                            f"{resume_text[:4000] if resume_text else 'No resume provided.'}\n\n"
-                            f"Requirements:\n"
-                            f"- Match the {difficulty} difficulty honestly.\n"
-                            f"- If a resume is provided, ask deep questions about their specific projects, tools, and experience.\n"
-                            f"- Mix question types: conceptual, coding, and behavioral-technical hybrids.\n"
-                            f"- Write as if you're interviewing at a top-tier tech firm.\n\n"
-                            f"Return ONLY this JSON: {{\"candidate_summary\": \"...\", \"questions\": [\"q1\", ..., \"q7\"]}}"
-                        )
-                    }
-                ],
-                model="llama-3.3-70b-versatile",
-                temperature=0.7,
-                response_format={"type": "json_object"}
-            )
-            result = json.loads(chat.choices[0].message.content)
-            questions_list = result.get("questions", [])
-            candidate_summary = result.get("candidate_summary", "")
-            print(f"Groq generated {len(questions_list)} questions for {job_role} ({difficulty})")
-        except Exception as e:
-            print(f"Groq Question Generation Error: {e}")
-            questions_list = [
-                f"Walk me through how you would design a scalable {job_role} system from scratch.",
-                f"Describe a challenging bug you encountered in a {difficulty}-level project. How did you debug it?",
-                f"What are the key performance trade-offs you consider when working as a {job_role}?",
-                "How do you ensure code quality in a fast-moving team?",
-                "Tell me about a time you had to learn a new technology under time pressure.",
-            ]
-            candidate_summary = None
+        questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty, resume_text)
 
     elif manual_questions:
         questions_list = [q.strip() for q in manual_questions.split('\n') if q.strip()]
@@ -372,9 +467,43 @@ async def create_interview(
     db.commit()
     db.refresh(new_interview)
     
-    print(f"DEBUG: Saved interview {new_interview.id} with questions: {new_interview.questions}")
+    return RedirectResponse(url="/dashboard?msg=Interview+created+successfully", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/interviews/mock")
+async def create_mock_interview(
+    request: Request,
+    job_role: str = Form(...),
+    difficulty: str = Form(...),
+    db: Session = Depends(database.get_db)
+):
+    user_email = request.cookies.get("user_email")
+    user = db.query(models.User).filter(models.User.email == user_email).first()
     
-    return RedirectResponse(url="/dashboard?msg=Interview+Created+Successfully", status_code=status.HTTP_303_SEE_OTHER)
+    if not user or user.role != "candidate":
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Use system admin as placeholder recruiter for mock interviews
+    admin = db.query(models.User).filter(models.User.email == "admin@hirewise.com").first()
+    recruiter_id = admin.id if admin else None
+
+    # Generate questions via AI
+    questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty)
+
+    new_interview = models.Interview(
+        recruiter_id=recruiter_id,
+        candidate_id=user.id,
+        job_role=job_role,
+        difficulty=difficulty,
+        questions=json.dumps(questions_list),
+        candidate_summary="Practice Mock Interview",
+        status="pending"
+    )
+    
+    db.add(new_interview)
+    db.commit()
+    db.refresh(new_interview)
+    
+    return RedirectResponse(url=f"/interview/{new_interview.id}", status_code=status.HTTP_303_SEE_OTHER)
     
 @app.post("/interview/{interview_id}/review")
 async def review_interview(

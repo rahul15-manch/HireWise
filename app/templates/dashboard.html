@@ -4,1118 +4,931 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | HireWise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>HireWise Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --hw-blue: #0077b5;
-            --li-bg: #f3f2ef;
-            --li-border: #e0e0e0;
-            --li-text: #000000;
-            --li-text-secondary: #666666;
-            --li-card-bg: #ffffff;
-            --li-hover: #f0f7ff;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --background: #f8fafc;
+            --sidebar: #ffffff;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius-lg: 1rem;
+            --radius-md: 0.75rem;
+        }
+
+        [data-theme='dark'] {
+            --background: #0f172a;
+            --sidebar: #1e293b;
+            --card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
         }
 
         body {
-            font-family: 'Inter', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
-            background-color: var(--li-bg);
-            color: var(--li-text);
-            line-height: 1.5;
+            background-color: var(--background);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Navbar */
-        .navbar {
-            background-color: white;
-            padding: 0.75rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid var(--li-border);
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
         }
 
-        .nav-content {
-            width: 100%;
-            max-width: 1128px;
+        .logo {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-
-        .nav-logo {
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
             text-decoration: none;
-            display: flex;
-            align-items: center;
         }
 
-        .nav-logo img {
-            height: 80px;
-            width: auto;
+        .logo img {
+            width: 32px;
+            height: 32px;
         }
 
-        .nav-items {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
+        .logo span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
         }
 
         .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
             text-decoration: none;
-            color: var(--li-text-secondary);
-            font-size: 0.8rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: color 0.2s;
-        }
-
-        .nav-link i {
-            font-size: 1.2rem;
-            margin-bottom: 2px;
-        }
-
-        .nav-link:hover {
-            color: var(--li-text);
-        }
-
-        .nav-link.active {
-            color: var(--li-text);
-            border-bottom: 2px solid var(--li-text);
-        }
-
-        /* Layout */
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 1.75rem;
-            padding: 0 1.5rem;
-        }
-
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-
-            .left-aside {
-                display: none;
-            }
-        }
-
-        /* Cards */
-        .card {
-            background: var(--li-card-bg);
-            border: 1px solid var(--li-border);
-            border-radius: 14px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            transition: box-shadow 0.2s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Profile Card (Left) */
-        .profile-card {
-            text-align: center;
-        }
-
-        .profile-header {
-            height: 54px;
-            background: #a0b4b7;
-        }
-
-        .profile-info {
-            padding: 0 1rem 1rem;
-            margin-top: -30px;
-        }
-
-        .profile-avatar {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: white;
-            border: 2px solid white;
-            margin: 0 auto 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: var(--li-blue);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-name {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .profile-role {
-            font-size: 0.75rem;
-            color: var(--li-text-secondary);
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--li-border);
-            padding-bottom: 1rem;
-        }
-
-        .profile-stats {
-            text-align: left;
-            padding-top: 0.5rem;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            padding: 0.25rem 0;
-            color: var(--li-text-secondary);
-        }
-
-        .stat-value {
-            color: var(--li-blue);
-            font-weight: 600;
-        }
-
-        /* Create Interview Card (Center) */
-        .create-box {
-            padding: 1.25rem 1.5rem;
-        }
-
-        .create-box-header {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .input-placeholder {
-            flex-grow: 1;
-            padding: 0.85rem 1.25rem;
-            border: 1px solid var(--li-border);
-            border-radius: 35px;
-            background: #f8f9fa;
-            color: var(--li-text-secondary);
+            color: var(--text-muted);
             font-weight: 500;
-            cursor: pointer;
-            text-align: left;
-            transition: background 0.2s, border-color 0.2s;
-            font-size: 0.9rem;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
         }
 
-        .input-placeholder:hover {
-            background: #ebebeb;
-            border-color: #bbb;
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
         }
 
-        /* Interview Feed (Center) */
-        .feed-item {
-            padding: 0;
+        .nav-link.active i {
+            color: var(--primary);
         }
 
-        .feed-empty {
-            padding: 3rem 2rem;
-            text-align: center;
-            color: var(--li-text-secondary);
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
         }
 
-        .feed-header {
-            padding: 1rem 1.25rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        /* Main Content */
+        .main-wrapper {
+            flex-grow: 1;
+            margin-left: 260px;
+            padding: 2rem;
+            max-width: calc(100vw - 260px);
         }
 
-        .feed-actor {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .actor-info h4 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .actor-info p {
-            font-size: 0.78rem;
-            color: var(--li-text-secondary);
-            margin-top: 1px;
-        }
-
-        .feed-content {
-            padding: 0 1.25rem 1.25rem;
-        }
-
-        .interview-details {
-            margin: 0.5rem 0;
-            font-size: 0.95rem;
-        }
-
-        .status-pill {
-            display: inline-block;
-            padding: 0.2rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-completed {
-            background: #e2f0fe;
-            color: #0056b3;
-        }
-
-        .status-cleared {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-rejected {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-cheating_detected {
-            background: #1a0000;
-            color: #ff4444;
-            border: 1px solid #aa2222;
-        }
-
-        .cheat-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #fff0f0;
-            color: #cc0000;
-            border: 1px solid #ffaaaa;
-            border-radius: 20px;
-            padding: 3px 10px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            margin-left: 8px;
-            vertical-align: middle;
-            animation: cheatPulse 2s infinite;
-        }
-
-        @keyframes cheatPulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(204, 0, 0, 0.3);
-            }
-
-            50% {
-                box-shadow: 0 0 0 6px rgba(204, 0, 0, 0);
-            }
-        }
-
-        .cheat-log-panel {
-            background: #fff5f5;
-            border: 1px solid #fecaca;
-            border-radius: 8px;
-            padding: 14px;
-            margin-top: 12px;
-            font-size: 0.82rem;
-        }
-
-        .cheat-log-panel h6 {
-            color: #991b1b;
-            font-size: 0.82rem;
-            font-weight: 700;
-            margin: 0 0 8px;
-        }
-
-        .cheat-log-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 5px 0;
-            border-bottom: 1px dashed #fca5a5;
-            color: #7f1d1d;
-        }
-
-        .cheat-log-item:last-child {
-            border-bottom: none;
-        }
-
-        .cheat-ts {
-            font-size: 0.72rem;
-            color: #ef4444;
-            white-space: nowrap;
-        }
-
-        .feed-actions {
-            border-top: 1px solid var(--li-border);
-            display: flex;
-            padding: 4px;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 0.75rem;
-            background: transparent;
-            border: none;
-            border-radius: 4px;
-            color: var(--li-text-secondary);
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .action-btn:hover {
-            background: #ebebeb;
-        }
-
-        /* Form Overlay */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            width: 552px;
-            border-radius: 8px;
-            padding: 1.5rem;
-            position: relative;
-        }
-
-        .modal-header {
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--li-border);
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
         }
 
-        .close-modal {
-            cursor: pointer;
-            font-size: 1.5rem;
-            color: var(--li-text-secondary);
+        .user-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            color: var(--li-text-secondary);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #666;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .submit-btn {
-            background: var(--li-blue);
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary);
             color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 600;
-            cursor: pointer;
-            float: right;
+            font-size: 1.1rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-val {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Dashboard Sections */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .content-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Kanban Board for Recruiter */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
             margin-top: 1rem;
         }
 
-        /* Right Aside */
-        .news-card {
+        .kanban-col {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-md);
             padding: 1rem;
+            min-height: 400px;
         }
 
-        .news-header {
-            display: flex;
-            justify-content: space-between;
+        .kanban-title {
+            font-size: 0.9rem;
             font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-
-        .news-item {
-            margin-bottom: 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        .news-item h5 {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .news-item p {
-            color: var(--li-text-secondary);
-            font-size: 0.75rem;
-        }
-
-        /* Q&A / Evaluation Expandable */
-        .expand-section {
-            display: none;
-            background: #f8f9fa;
-            border-top: 1px solid var(--li-border);
-            padding: 1rem;
-        }
-
-        .qa-item {
             margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px dotted #ccc;
-        }
-
-        .qa-q {
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 4px;
-            color: #333;
-        }
-
-        .qa-a {
-            font-size: 0.85rem;
-            color: #555;
-            background: white;
-            padding: 6px;
-            border-radius: 4px;
-        }
-
-        .nav-logo {
-            text-decoration: none;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+        }
+
+        .kanban-card {
+            background: var(--card);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            margin-bottom: 0.75rem;
+            cursor: grab;
+            transition: box-shadow 0.2s;
+        }
+
+        .kanban-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Candidate Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.02);
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 0.85rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Readiness Score for Candidate */
+        .readiness-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .readiness-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 12px solid var(--border);
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .readiness-val {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .readiness-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--card);
+            width: 100%;
+            max-width: 600px;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            background: var(--background);
+            color: var(--text-main);
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                width: 80px;
+                padding: 2rem 0.5rem;
+                align-items: center;
+            }
+
+            .logo span,
+            .nav-link span {
+                display: none;
+            }
+
+            .main-wrapper {
+                margin-left: 80px;
+                max-width: calc(100vw - 80px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100vw;
+            }
+
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <nav class="navbar">
-        <div class="nav-content">
-            <a href="/dashboard" class="nav-logo">
-                <img src="/static/img/logo.png" alt="HireWise Logo">
-            </a>
-            <div class="nav-items">
+    <aside class="sidebar">
+        <a href="/dashboard" class="logo">
+            <img src="/static/img/logo.png" alt="HireWise">
+            <span>HireWise</span>
+        </a>
+        <nav class="nav-menu">
+            <li class="nav-item">
                 <a href="/dashboard" class="nav-link active">
-                    <i class="fas fa-house"></i>
-                    <span>Home</span>
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
                 </a>
-                <a href="/logout" class="nav-link" style="color: #dc3545;">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+            </li>
+            {% if user.role == 'recruiter' %}
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="openModal('createModal')">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Create Assessment</span>
                 </a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="openModal('mockModal')">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Practice Interview</span>
+                </a>
+            </li>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout" class="nav-link" style="color: var(--danger);">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header>
+            <div>
+                <h1>Welcome back, {{ (user.full_name or "User").split(' ')[0] }}!</h1>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Here's what's happening with your assessments
+                    today.</p>
+            </div>
+            <div class="user-meta">
+                <div style="text-align: right;">
+                    <div style="font-weight: 600;">{{ user.full_name }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ user.role | capitalize }}</div>
+                </div>
+                <div class="user-avatar">
+                    {{ (user.full_name or "U")[0] }}
+                </div>
+            </div>
+        </header>
+
+        {% if msg %}
+        <div
+            style="background: rgba(34, 197, 94, 0.1); color: var(--success); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 2rem; border: 1px solid rgba(34, 197, 94, 0.2); display: flex; align-items: center; gap: 0.75rem;">
+            <i class="fas fa-check-circle"></i> {{ msg }}
+        </div>
+        {% endif %}
+
+        {% if user.role == 'recruiter' %}
+        <!-- RECRUITER DASHBOARD -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-val">{{ stats.total }}</div>
+                <div class="stat-label">Total Candidates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--success);">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                </div>
+                <div class="stat-val">{{ stats.shortlisted }}</div>
+                <div class="stat-label">Shortlisted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                </div>
+                <div class="stat-val">{{ stats.screening }}</div>
+                <div class="stat-label">In Screening</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                </div>
+                <div class="stat-val">{{ stats.rejected }}</div>
+                <div class="stat-label">Rejected</div>
             </div>
         </div>
-    </nav>
 
-    <div class="container">
-        <!-- Left Column -->
-        <aside class="left-aside">
-            <div class="card profile-card">
-                <div class="profile-header"></div>
-                <div class="profile-info">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="profile-name">{{ user.full_name }}</div>
-                    <div class="profile-role">{{ user.role | capitalize }} at HireWise</div>
-
-                </div>
+        <div class="content-card">
+            <div class="card-header">
+                <h3>Candidate Pipeline</h3>
+                <div class="btn btn-ghost" style="font-size: 0.85rem;"><i class="fas fa-filter"></i> Filters</div>
             </div>
-        </aside>
-
-        <!-- Center Column -->
-        <main class="main-content">
-            {% if user.role == 'recruiter' %}
-            <div class="card create-box">
-                <div class="create-box-header">
-                    <div class="profile-avatar"
-                        style="width: 44px; height: 44px; font-size: 1.1rem; margin: 0; flex-shrink: 0;">
-                        <i class="fas fa-user-tie"></i>
+            <div class="kanban-board">
+                {% for col_name, items in stats.pipeline.items() %}
+                <div class="kanban-col">
+                    <div class="kanban-title">
+                        {{ col_name }}
+                        <span
+                            style="background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">{{
+                            items|length }}</span>
                     </div>
-                    <div class="input-placeholder"
-                        onclick="document.getElementById('createModal').style.display='flex'">
-                        Start a new interview assessment...
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if msg %}
-            <div class="card"
-                style="padding: 12px 1.25rem; background: #d4edda; color: #155724; border-color: #c3e6cb; font-size: 0.9rem; text-align: center; border-radius: 14px;">
-                {{ msg }}
-            </div>
-            {% endif %}
-
-            {% for interview in interviews %}
-            <div class="card feed-item">
-                <div class="feed-header">
-                    <div class="feed-actor">
-                        <div class="profile-avatar" style="width: 48px; height: 48px; font-size: 1.2rem; margin: 0;">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="actor-info">
-                            <h4>HireWise Talent Acquisition</h4>
-                            <p>Assigned to: {{ interview.candidate.full_name if interview.candidate else
-                                interview.candidate_id }}</p>
-                            <p>1m • <i class="fas fa-globe-americas"></i></p>
+                    {% for item in items %}
+                    <div class="kanban-card">
+                        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">{{
+                            item.candidate_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">{{
+                            item.job_role }}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span
+                                style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{
+                                item.difficulty }}</span>
+                            <button class="btn btn-ghost" style="padding: 0; font-size: 0.8rem; color: var(--primary);"
+                                onclick="window.location.hash='iv-{{ item.id }}'">View</button>
                         </div>
                     </div>
-                    <i class="fas fa-ellipsis-h" style="color: var(--li-text-secondary); cursor: pointer;"></i>
-                </div>
-                <div class="feed-content">
-                    <div class="interview-details">
-                        <strong style="color: var(--li-blue);">{{ interview.job_role }}</strong> • {{
-                        interview.difficulty }} Level
-                        {% if interview.pdf_file %}
-                        <div style="margin-top: 5px; color: #28a745; font-size: 0.8rem;">
-                            <i class="fas fa-paperclip"></i> 📄 Assessment PDF Attached
-                        </div>
-                        {% endif %}
-                        {% if interview.resume_file %}
-                        <div style="margin-top: 5px; color: #6366f1; font-size: 0.8rem;">
-                            <i class="fas fa-file-invoice"></i> 📑 Candidate Resume Attached
-                        </div>
-                        {% endif %}
-                        {% if interview.candidate_summary %}
-                        <div
-                            style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-radius: 8px; border-left: 3px solid #0077b5; font-size: 0.85rem; color: #333;">
-                            <strong>AI Candidate Summary:</strong> {{ interview.candidate_summary }}
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <span class="status-pill status-{{ interview.status }}">
-                        {{ 'PASSED ✅' if interview.status == 'cleared' else
-                        'REJECTED ❌' if interview.status == 'rejected' else
-                        'UNDER REVIEW ⏳' if interview.status == 'completed' else
-                        '🚫 CHEATING DETECTED' if interview.status == 'cheating_detected' else
-                        interview.status | upper }}
-                    </span>
-                    {% if interview.cheat_flagged %}
-                    {% set cheat_events = json.loads(interview.cheat_log) if interview.cheat_log else [] %}
-                    <span class="cheat-badge">⚠️ {{ cheat_events|length }} Proctoring Warning{{ 's' if
-                        cheat_events|length != 1 else '' }}</span>
-                    {% endif %}
-
-                    {% if interview.recruiter_feedback and (user.role == 'recruiter' or interview.status in ['cleared',
-                    'rejected']) %}
-                    <div
-                        style="margin-top: 10px; padding: 10px; background: #fdf6e3; border-radius: 4px; font-size: 0.85rem; border-left: 3px solid #b58900;">
-                        <strong>Feedback:</strong> {{ interview.recruiter_feedback }}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="feed-actions">
-                    {% if user.role == 'recruiter' %}
-                    <button class="action-btn" onclick="toggleSection('qs-{{ interview.id }}')">
-                        <i class="fas fa-eye"></i> View Q&A
-                    </button>
-                    <button class="action-btn" onclick="toggleSection('eval-{{ interview.id }}')">
-                        <i class="fas fa-chart-line"></i> AI Report
-                    </button>
-                    {% if interview.status == 'completed' or interview.status == 'cleared' or interview.status ==
-                    'rejected' %}
-                    <button class="action-btn" onclick="toggleSection('review-{{ interview.id }}')">
-                        <i class="fas fa-check-double"></i> Review
-                    </button>
-                    {% endif %}
-                    {% else %}
-                    {% if interview.status == 'pending' %}
-                    <a href="/interview/{{ interview.id }}" class="action-btn"
-                        style="text-decoration: none; color: var(--li-blue);">
-                        <i class="fas fa-play-circle"></i> Start Now
-                    </a>
-                    {% elif interview.status == 'completed' %}
-                    <button class="action-btn" disabled style="color: #f59e0b; border-color: #f59e0b;">
-                        <i class="fas fa-hourglass-half"></i> Awaiting Recruiter Decision
-                    </button>
-                    {% elif interview.status == 'cleared' %}
-                    <button class="action-btn" onclick="toggleSection('result-{{ interview.id }}')"
-                        style="color: #28a745; border-color: #28a745;">
-                        <i class="fas fa-trophy"></i> View Your Result
-                    </button>
-                    {% elif interview.status == 'rejected' %}
-                    <button class="action-btn" onclick="toggleSection('result-{{ interview.id }}')"
-                        style="color: #dc3545; border-color: #dc3545;">
-                        <i class="fas fa-chart-line"></i> View Feedback
-                    </button>
-                    {% elif interview.status == 'cheating_detected' %}
-                    <button class="action-btn" disabled style="color: #cc0000; cursor: not-allowed;">
-                        <i class="fas fa-ban"></i> Interview Disqualified
-                    </button>
-                    {% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- Candidate Result Card (only visible after recruiter decision) -->
-                {% if user.role == 'candidate' and interview.status in ['cleared', 'rejected'] %}
-                {% set eval = json.loads(interview.evaluation) if interview.evaluation else {} %}
-                <div id="result-{{ interview.id }}" class="expand-section"
-                    style="background: {{ '#f0fdf4' if interview.status == 'cleared' else '#fff1f2' }}; border: 1px solid {{ '#bbf7d0' if interview.status == 'cleared' else '#fecdd3' }}; border-radius: 10px; padding: 20px; margin: 0 1.25rem 1.25rem;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                        <div style="font-size: 2.5rem;">{{ '🎉' if interview.status == 'cleared' else '📋' }}</div>
-                        <div>
-                            <div
-                                style="font-weight: 700; font-size: 1rem; color: {{ '#166534' if interview.status == 'cleared' else '#9f1239' }};">
-                                {{ 'Congratulations — You Passed!' if interview.status == 'cleared' else 'Interview Not
-                                Successful' }}</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">Final decision by the recruiter</div>
-                        </div>
-                        {% if eval.score is defined %}
-                        <div
-                            style="margin-left: auto; text-align: center; background: white; border-radius: 10px; padding: 8px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
-                            <div
-                                style="font-size: 1.8rem; font-weight: 800; color: {{ '#28a745' if (eval.score or 0) >= 70 else '#f59e0b' if (eval.score or 0) >= 40 else '#dc3545' }};">
-                                {{ eval.score or '—' }}
-                            </div>
-                            <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">AI Score / 100
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% if interview.recruiter_feedback %}
-                    <div
-                        style="background: white; border-radius: 8px; padding: 12px; border-left: 3px solid {{ '#22c55e' if interview.status == 'cleared' else '#f87171' }}; font-size: 0.85rem; margin-bottom: 12px;">
-                        <strong>Recruiter's Feedback:</strong> {{ interview.recruiter_feedback }}
-                    </div>
-                    {% endif %}
-                    {% if eval.strengths or eval.weaknesses %}
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem;">
-                        <div style="background: #f0fdf4; border-radius: 6px; padding: 10px;">
-                            <div style="font-weight: 700; color: #166534; margin-bottom: 5px;"><i
-                                    class="fas fa-plus-circle"></i> Strengths</div>
-                            {% for s in eval.strengths or [] %}<div style="color: #14532d; margin-bottom: 2px;">• {{ s
-                                }}</div>{% endfor %}
-                        </div>
-                        <div style="background: #fff1f2; border-radius: 6px; padding: 10px;">
-                            <div style="font-weight: 700; color: #9f1239; margin-bottom: 5px;"><i
-                                    class="fas fa-minus-circle"></i> Areas to Improve</div>
-                            {% for w in eval.weaknesses or [] %}<div style="color: #881337; margin-bottom: 2px;">• {{ w
-                                }}</div>{% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Expandable Sections (Recruiter-only) -->
-                <div id="qs-{{ interview.id }}" class="expand-section">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <span style="font-weight: 600;">Candidate Logs</span>
-                        {% if interview.pdf_file %}
-                        <a href="/static/uploads/{{ interview.pdf_file }}" target="_blank"
-                            style="font-size: 0.8rem; color: var(--li-blue);">Original PDF</a>
-                        {% endif %}
-                    </div>
-                    {% set qs = json.loads(interview.questions) %}
-                    {% set rs = json.loads(interview.responses) if interview.responses else [] %}
-                    {% for i in range(qs|length) %}
-                    <div class="qa-item">
-                        <div class="qa-q">Q: {{ qs[i] }}</div>
-                        <div class="qa-a">{{ rs[i] if i < rs|length else "Awaiting response..." }}</div>
-                        </div>
-                        {% endfor %}
-
-                        {% if interview.cheat_flagged and interview.cheat_log %}
-                        {% set cheat_events = json.loads(interview.cheat_log) %}
-                        <div class="cheat-log-panel">
-                            <h6>🚨 Proctoring Violation History ({{ cheat_events|length }} incident{{ 's' if
-                                cheat_events|length != 1 else '' }})</h6>
-                            {% for event in cheat_events %}
-                            <div class="cheat-log-item">
-                                <span>⚠️</span>
-                                <span style="flex:1;">{{ event.reason }}</span>
-                                <span class="cheat-ts">{{ event.timestamp }}</span>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        {% if interview.recording_file %}
-                        <div
-                            style="background: #0f172a; border: 1px solid #1e40af; border-radius: 12px; padding: 1.1rem; margin-top: 14px;">
-                            <div
-                                style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.8rem;">
-                                <span style="font-weight: 700; color: #93c5fd; font-size: 0.9rem;">🎥 Interview
-                                    Recording</span>
-                                <a href="/static/recordings/{{ interview.recording_file }}" download
-                                    style="font-size: 0.78rem; color: #60a5fa; text-decoration: none; border: 1px solid #1e40af; padding: 3px 10px; border-radius: 20px;">
-                                    ⬇ Download
-                                </a>
-                            </div>
-                            <video controls src="/static/recordings/{{ interview.recording_file }}"
-                                style="width:100%; border-radius: 8px; max-height: 360px; background:#000; display:block;"
-                                preload="metadata">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                        {% endif %}
-
-                    </div>
-
-                    <div id="eval-{{ interview.id }}" class="expand-section"
-                        style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                            <h5 style="font-size: 1.1rem; color: #1e293b; margin: 0;"><i class="fas fa-robot"
-                                    style="color: var(--hw-blue);"></i> AI Score & Analysis</h5>
-                            {% set eval = json.loads(interview.evaluation) if interview.evaluation else {} %}
-                            <div style="text-align: right;">
-                                <div
-                                    style="font-size: 2rem; font-weight: 800; color: {{ '#28a745' if (eval.score or 0) >= 70 else '#f59e0b' if (eval.score or 0) >= 40 else '#dc3545' }}; line-height: 1;">
-                                    {{ eval.score or 0 }}<span style="font-size: 1rem; color: #64748b;">/100</span>
-                                </div>
-                                <div
-                                    style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-top: 4px; text-transform: uppercase;">
-                                    Technical Score</div>
-                            </div>
-                        </div>
-
-                        <div
-                            style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
-                            <div style="font-weight: 700; font-size: 0.9rem; color: #334155; margin-bottom: 8px;">
-                                Technical Analysis</div>
-                            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6;">{{ eval.analysis }}</p>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                            <div
-                                style="background: #f0fdf4; border-radius: 8px; padding: 12px; border: 1px solid #bbf7d0;">
-                                <div style="font-weight: 700; font-size: 0.8rem; color: #166534; margin-bottom: 5px;"><i
-                                        class="fas fa-plus-circle"></i> Key Strengths</div>
-                                <ul style="list-style: none; padding: 0; margin: 0;">
-                                    {% for s in eval.strengths or [] %}
-                                    <li style="font-size: 0.8rem; color: #14532d; margin-bottom: 3px;">• {{ s }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div
-                                style="background: #fff1f2; border-radius: 8px; padding: 12px; border: 1px solid #fecdd3;">
-                                <div style="font-weight: 700; font-size: 0.8rem; color: #9f1239; margin-bottom: 5px;"><i
-                                        class="fas fa-minus-circle"></i> Areas for Growth</div>
-                                <ul style="list-style: none; padding: 0; margin: 0;">
-                                    {% for w in eval.weaknesses or [] %}
-                                    <li style="font-size: 0.8rem; color: #881337; margin-bottom: 3px;">• {{ w }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div
-                            style="font-size: 0.8rem; color: #64748b; font-style: italic; background: #f1f5f9; padding: 10px; border-radius: 6px;">
-                            <strong>AI Summary:</strong> {{ eval.feedback }}
-                        </div>
-                    </div>
-
-                    <div id="review-{{ interview.id }}" class="expand-section" style="background: #fff3cd;">
-                        <h5 style="margin-bottom: 1rem;">Final Decision Panel</h5>
-                        <form action="/interview/{{ interview.id }}/review" method="post">
-                            <textarea name="feedback" placeholder="Write your final feedback here..." rows="3"
-                                style="width: 100%; border: 1px solid #ddd; padding: 10px; border-radius: 4px; margin-bottom: 10px;">{{ interview.recruiter_feedback or "" }}</textarea>
-                            <div style="display: flex; gap: 10px;">
-                                <button type="submit" name="decision" value="pass"
-                                    style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">Pass
-                                    Candidate</button>
-                                <button type="submit" name="decision" value="fail"
-                                    style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">Reject
-                                    Candidate</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                {% else %}
-                <div class="card"
-                    style="padding: 3rem 2rem; text-align: center; color: var(--li-text-secondary); border-radius: 14px;">
-                    <i class="fas fa-clipboard-list"
-                        style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.15; display: block;"></i>
-                    <p style="font-size: 0.95rem;">No interview assessments found.</p>
-                    {% if user.role == 'recruiter' %}
-                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Create one using the box above!</p>
-                    {% endif %}
+                    {% endfor %}
                 </div>
                 {% endfor %}
-        </main>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3>All Candidates</h3>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Role</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for iv in interviews %}
+                        <tr id="iv-{{ iv.id }}">
+                            <td>
+                                <div style="font-weight: 500;">{{ iv.candidate_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ iv.candidate.email if
+                                    iv.candidate else 'No Email' }}</div>
+                            </td>
+                            <td>{{ iv.job_role }}</td>
+                            <td>
+                                {% set eval = json.loads(iv.evaluation) if iv.evaluation else {} %}
+                                <div
+                                    style="font-weight: 600; color: {{ 'var(--success)' if (eval.score or 0) >= 70 else 'var(--warning)' if (eval.score or 0) >= 40 else 'var(--danger)' }}">
+                                    {{ eval.score if eval.score is defined else '—' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span
+                                    style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 20px; 
+                                    {% if iv.status == 'cleared' %} background: rgba(34, 197, 94, 0.1); color: var(--success);
+                                    {% elif iv.status == 'rejected' %} background: rgba(239, 68, 68, 0.1); color: var(--danger);
+                                    {% elif iv.status == 'completed' %} background: rgba(99, 102, 241, 0.1); color: var(--primary);
+                                    {% else %} background: rgba(100, 116, 139, 0.1); color: var(--secondary); {% endif %}">
+                                    {{ iv.status | upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-ghost" style="padding: 4px;"
+                                    onclick="toggleExpand('iv-details-{{ iv.id }}')">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr id="iv-details-{{ iv.id }}" style="display: none;">
+                            <td colspan="5" style="background: rgba(0,0,0,0.01); padding: 1.5rem;">
+                                <!-- Details from original dashboard linked here -->
+                                <div style="display: flex; gap: 2rem;">
+                                    <div style="flex: 1;">
+                                        <h5 style="margin-bottom: 1rem;">AI Insights</h5>
+                                        {% if iv.evaluation %}
+                                        <p style="font-size: 0.9rem; line-height: 1.6;">{{ eval.analysis }}</p>
+                                        {% else %}
+                                        <p style="color: var(--text-muted); font-size: 0.9rem;">Evaluation pending...
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                    <div style="width: 200px;">
+                                        <h5 style="margin-bottom: 1rem;">Quick Actions</h5>
+                                        <a href="/dashboard#iv-{{ iv.id }}" class="btn btn-primary"
+                                            style="font-size: 0.8rem; width: 100%; justify-content: center;">Full
+                                            Report</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not interviews %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                                <i class="fas fa-users-slash"
+                                    style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No candidates found in your pipeline yet.</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- CANDIDATE DASHBOARD -->
+        <div class="dashboard-grid">
+            <div class="left-col">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3>Your Progress</h3>
+                        <div class="btn btn-ghost" onclick="window.location.href='/dashboard'"><i
+                                class="fas fa-sync"></i> Refresh</div>
+                    </div>
+                    <canvas id="progressChart" height="150"></canvas>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3>Recent Career Activity</h3>
+                    </div>
+                    {% if interviews %}
+                    {% for iv in interviews %}
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div
+                                style="width: 40px; height: 40px; border-radius: 8px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">{{ iv.job_role }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">{{ iv.difficulty | capitalize
+                                    }} Level • {{ iv.status | capitalize }}</div>
+                            </div>
+                        </div>
+                        {% if iv.status == 'pending' %}
+                        <a href="/interview/{{ iv.id }}" class="btn btn-primary"
+                            style="padding: 0.5rem 1rem; font-size: 0.85rem;">Continue</a>
+                        {% else %}
+                        <button class="btn btn-ghost" onclick="window.location.hash='iv-{{ iv.id }}'">View
+                            Report</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <i class="fas fa-clipboard-list"
+                            style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p>No interviews yet. Start practice today!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3>Readiness</h3>
+                    </div>
+                    <div class="readiness-container">
+                        <div class="readiness-circle" style="border-color: var(--primary);">
+                            <div class="readiness-val" id="readinessScore">{{ stats.readiness_score }}</div>
+                            <div class="readiness-label">Score</div>
+                        </div>
+                        <p style="text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                            {{ 'Excellent! You are ready for the big leagues.' if stats.readiness_score >= 80 else 'Good
+                            progress. Keep practicing to reach FAANG level.' if stats.readiness_score >= 50 else 'Keep
+                            practicing to build your core skills.' }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3>Gamification</h3>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <i class="fas fa-fire" style="font-size: 2rem; color: var(--warning);"></i>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.2rem;">{{ stats.streak }} Days Streak!</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Practice daily to unlock bonuses.
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <h5 style="margin-bottom: 0.75rem;">Top Skills</h5>
+                        {% for skill, count in stats.skills %}
+                        <div style="margin-bottom: 0.5rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                                <span>{{ skill }}</span>
+                                <span style="font-weight: 600;">{{ count }}x</span>
+                            </div>
+                            <div style="height: 6px; background: var(--border); border-radius: 10px; overflow: hidden;">
+                                <div
+                                    style="width: {{ (count / (stats.skills[0][1] if stats.skills else 1) * 100)|round }}%; height: 100%; background: var(--primary);">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
-    <!-- Create Interview Modal -->
+    <!-- Modals -->
+    <div id="mockModal" class="modal">
+        <div class="modal-content">
+            <div class="card-header">
+                <h2>Start Practice Interview</h2>
+                <button class="btn btn-ghost" onclick="closeModal('mockModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form action="/interviews/mock" method="POST">
+                <div class="form-group">
+                    <label>Position / Role</label>
+                    <select name="job_role" required>
+                        <option value="Web Developer">Web Developer</option>
+                        <option value="ML Engineer">ML Engineer</option>
+                        <option value="Data Scientist">Data Scientist</option>
+                        <option value="Mobile Developer">Mobile Developer</option>
+                        <option value="Backend Engineer">Backend Engineer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Difficulty Level</label>
+                    <select name="difficulty" required>
+                        <option value="entry">Entry Level</option>
+                        <option value="intermediate" selected>Intermediate</option>
+                        <option value="senior">Senior / Expert</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal('mockModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Practice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="createModal" class="modal">
-        <div class="modal-content" style="width: 580px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h3>Create New Assessment</h3>
-                <span class="close-modal"
-                    onclick="document.getElementById('createModal').style.display='none'">&times;</span>
+        <div class="modal-content">
+            <div class="card-header">
+                <h2>New Interview Assessment</h2>
+                <button class="btn btn-ghost" onclick="closeModal('createModal')"><i class="fas fa-times"></i></button>
             </div>
-
-            <!-- Load from saved template -->
-            <div
-                style="background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-bookmark" style="color: #0077b5;"></i>
-                <select id="templateSelect" onchange="loadTemplate(this.value)"
-                    style="flex: 1; border: 1px solid #cce0ff; border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; background: white; color: #333;">
-                    <option value="">&#8212; Load a saved template &#8212;</option>
-                </select>
-                <button type="button" onclick="openTemplatesPanel()"
-                    style="background: none; border: 1px solid #0077b5; color: #0077b5; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">
-                    <i class="fas fa-list"></i> Manage
-                </button>
-            </div>
-
-            <form id="createForm" action="/interviews/create" method="post" enctype="multipart/form-data">
+            <form action="/interviews/create" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Candidate Email</label>
-                    <input type="email" name="candidate_email" required placeholder="candidate@example.com">
+                    <input type="email" name="candidate_email" placeholder="email@example.com" required>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group">
-                        <label>Job Role</label>
-                        <input type="text" id="jobRoleInput" name="job_role" required
-                            placeholder="e.g. Python Developer">
-                    </div>
-                    <div class="form-group">
-                        <label>Difficulty</label>
-                        <select name="difficulty">
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Expert">Expert</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>Job Role</label>
+                    <input type="text" name="job_role" placeholder="e.g. Senior Frontend Engineer" required>
                 </div>
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1rem; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label
-                            style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
-                            <input type="checkbox" name="generate_ai" value="true" style="width: auto;">
-                            <span style="font-weight: 600;">✨ AI Generate Questions</span>
-                        </label>
-                    </div>
-                    <p style="font-size: 0.75rem; color: #666; margin: 0; align-self: center;">Personalizes questions if
-                        a resume is uploaded, otherwise generates role-based questions.</p>
+                <div class="form-group">
+                    <label>Difficulty</label>
+                    <select name="difficulty">
+                        <option value="entry">Entry Level</option>
+                        <option value="intermediate" selected>Intermediate</option>
+                        <option value="senior">Senior / Expert</option>
+                    </select>
                 </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label style="color: #6366f1;"><i class="fas fa-file-invoice"></i> Candidate Resume
-                            (PDF)</label>
-                        <input type="file" name="resume_file" accept=".pdf" style="font-size: 0.8rem;">
-                    </div>
-                    <div class="form-group">
-                        <label style="color: #28a745;"><i class="fas fa-paperclip"></i> Assessment PDF
-                            (Optional)</label>
-                        <input type="file" name="pdf_file" accept=".pdf" style="font-size: 0.8rem;">
-                    </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 1rem;">
+                    <input type="checkbox" name="generate_ai" id="genAI" checked style="width: auto;">
+                    <label for="genAI" style="margin: 0;">Auto-generate AI Questions</label>
                 </div>
-                <button type="button" onclick="openSaveTemplateForm()"
-                    style="background: #0077b5; color: white; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
-                    <i class="fas fa-save"></i> Save as Template
-                </button>
-        </div>
-        <textarea id="manualQuestionsArea" name="manual_questions" rows="5"
-            placeholder="Type your questions here, one per line..."></textarea>
-    </div>
-
-    <!-- Inline save template form -->
-    <div id="saveTemplateForm"
-        style="display: none; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
-        <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 10px; color: #333;"><i class="fas fa-save"
-                style="color: #0077b5;"></i> Save as Template</div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="templateNameInput" placeholder="Template name, e.g. Python SDE Screen"
-                style="flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
-            <button type="button" onclick="saveTemplate()"
-                style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Save</button>
-            <button type="button" onclick="document.getElementById('saveTemplateForm').style.display='none'"
-                style="background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
-        </div>
-        <div id="saveTemplateMsg" style="font-size: 0.8rem; margin-top: 6px;"></div>
-    </div>
-
-    <button type="submit" class="submit-btn"
-        style="width: 100%; height: 44px; border-radius: 22px; margin-top: 10px;">Create &amp; Send Assessment</button>
-    </form>
-    </div>
-    </div>
-
-    <!-- Saved Templates Slide-in Panel -->
-    <div id="templatesPanel"
-        style="display: none; position: fixed; top: 0; right: 0; width: 380px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 2000; overflow-y: auto; padding: 1.5rem;">
-        <div
-            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
-            <h4 style="margin: 0; font-size: 1rem;"><i class="fas fa-bookmark" style="color: #0077b5;"></i> Saved
-                Templates</h4>
-            <span onclick="document.getElementById('templatesPanel').style.display='none'"
-                style="cursor: pointer; font-size: 1.4rem; color: #888; line-height: 1;">&times;</span>
-        </div>
-        <div id="templatesList" style="display: flex; flex-direction: column; gap: 10px;">
-            <p style="color: #888; font-size: 0.85rem; text-align: center; padding: 2rem 0;">Loading...</p>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal('createModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create & Send</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // ── Section toggles ──────────────────────────────────────────
-        function toggleSection(id) {
-            const section = document.getElementById(id);
-            const isVisible = section.style.display === 'block';
-            const parent = section.closest('.card');
-            parent.querySelectorAll('.expand-section').forEach(s => s.style.display = 'none');
-            section.style.display = isVisible ? 'none' : 'block';
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
         }
 
-        window.onclick = function (event) {
-            if (event.target == document.getElementById('createModal')) {
-                document.getElementById('createModal').style.display = 'none';
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function toggleExpand(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        // Initialize Progress Chart for Candidate
+        {% if user.role == 'candidate' %}
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [{% for iv in interviews[: 7]| reverse %} "{{ iv.job_role }}", {% endfor %}],
+            datasets: [{
+                label: 'Interview Score',
+                data: [{% for iv in interviews[: 7] | reverse %}
+            {% set eval = json.loads(iv.evaluation) if iv.evaluation else { } %}
+        { { eval.score if eval.score is defined else 0 } },
+        {% endfor %}],
+        borderColor: '#6366f1',
+            tension: 0.4,
+                fill: true,
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                }]
+            },
+        options: {
+            responsive: true,
+                plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, max: 100 },
+                x: { grid: { display: false } }
             }
         }
+        });
 
-        // ── Templates API ─────────────────────────────────────────────
-        let allTemplates = [];
+        // Animate readiness score
+        const scoreEl = document.getElementById('readinessScore');
+        const target = {{ stats.readiness_score }};
+        let current = 0;
+        const timer = setInterval(() => {
+            if (current >= target) clearInterval(timer);
+            scoreEl.innerText = current;
+            current += 1;
+        }, 20);
 
-        async function fetchTemplates() {
-            try {
-                const res = await fetch('/templates');
-                allTemplates = await res.json();
-                return allTemplates;
-            } catch (e) { return []; }
-        }
-
-        async function populateTemplateDropdown() {
-            const templates = await fetchTemplates();
-            const sel = document.getElementById('templateSelect');
-            sel.innerHTML = '<option value="">&#8212; Load a saved template &#8212;</option>';
-            templates.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = t.name + (t.job_role ? ' (' + t.job_role + ')' : '');
-                sel.appendChild(opt);
-            });
-        }
-
-        function loadTemplate(templateId) {
-            if (!templateId) return;
-            const t = allTemplates.find(x => x.id == templateId);
-            if (!t) return;
-            document.getElementById('manualQuestionsArea').value = t.questions.join('\n');
-            if (t.job_role) document.getElementById('jobRoleInput').value = t.job_role;
-        }
-
-        function openSaveTemplateForm() {
-            const questions = document.getElementById('manualQuestionsArea').value.trim();
-            if (!questions) { alert('Please add at least one question first.'); return; }
-            document.getElementById('saveTemplateForm').style.display = 'block';
-            document.getElementById('templateNameInput').focus();
-            document.getElementById('saveTemplateMsg').textContent = '';
-        }
-
-        async function saveTemplate() {
-            const name = document.getElementById('templateNameInput').value.trim();
-            const questions = document.getElementById('manualQuestionsArea').value.trim();
-            const jobRole = document.getElementById('jobRoleInput').value.trim();
-            const msgEl = document.getElementById('saveTemplateMsg');
-
-            if (!name) { msgEl.style.color = '#dc3545'; msgEl.textContent = 'Please enter a template name.'; return; }
-            if (!questions) { msgEl.style.color = '#dc3545'; msgEl.textContent = 'No questions to save.'; return; }
-
-            const form = new FormData();
-            form.append('template_name', name);
-            form.append('job_role', jobRole);
-            form.append('questions_text', questions);
-
-            const res = await fetch('/templates/save', { method: 'POST', body: form });
-            if (res.ok) {
-                msgEl.style.color = '#28a745'; msgEl.textContent = 'Template saved!';
-                document.getElementById('templateNameInput').value = '';
-                await populateTemplateDropdown();
-                setTimeout(() => { document.getElementById('saveTemplateForm').style.display = 'none'; }, 1500);
-            } else {
-                msgEl.style.color = '#dc3545'; msgEl.textContent = 'Save failed. Try again.';
+        // Handle Hash Navigation
+        function handleHash() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#iv-')) {
+                const id = hash.replace('#iv-', '');
+                const detailsRow = document.getElementById('iv-details-' + id);
+                if (detailsRow) {
+                    detailsRow.style.display = 'table-row';
+                    detailsRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         }
-
-        async function openTemplatesPanel() {
-            document.getElementById('templatesPanel').style.display = 'block';
-            await renderTemplatesPanel();
-        }
-
-        async function renderTemplatesPanel() {
-            const templates = await fetchTemplates();
-            const listEl = document.getElementById('templatesList');
-            if (!templates.length) {
-                listEl.innerHTML = '<p style="color:#888;font-size:0.85rem;text-align:center;padding:2rem 0;">No saved templates yet.</p>';
-                return;
-            }
-            listEl.innerHTML = templates.map(t => `
-                <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:10px;padding:12px;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-                        <div>
-                            <div style="font-weight:600;font-size:0.9rem;">${t.name}</div>
-                            ${t.job_role ? `<div style="font-size:0.75rem;color:#666;">${t.job_role}</div>` : ''}
-                        </div>
-                        <div style="display:flex;gap:6px;">
-                            <button onclick="useTemplate(${t.id})" style="background:#0077b5;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer;">Use</button>
-                            <button onclick="deleteTemplate(${t.id})" style="background:#dc3545;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:0.78rem;cursor:pointer;"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                    <ul style="margin:0;padding-left:16px;font-size:0.8rem;color:#555;">
-                        ${t.questions.slice(0, 3).map(q => `<li>${q}</li>`).join('')}
-                        ${t.questions.length > 3 ? `<li style="color:#999;">+${t.questions.length - 3} more...</li>` : ''}
-                    </ul>
-                </div>
-            `).join('');
-        }
-
-        function useTemplate(templateId) {
-            loadTemplate(templateId);
-            document.getElementById('templatesPanel').style.display = 'none';
-            document.getElementById('createModal').style.display = 'flex';
-        }
-
-        async function deleteTemplate(templateId) {
-            if (!confirm('Delete this template?')) return;
-            const res = await fetch(`/templates/${templateId}`, { method: 'DELETE' });
-            if (res.ok) { await populateTemplateDropdown(); renderTemplatesPanel(); }
-        }
-
-        document.addEventListener('DOMContentLoaded', populateTemplateDropdown);
+        window.addEventListener('load', handleHash);
+        window.addEventListener('hashchange', handleHash);
+        {% endif %}
     </script>
 </body>
 
