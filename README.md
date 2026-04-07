@@ -18,7 +18,7 @@
 ---
 
 ## 🌐 Live Demo
-**[https://hirewise-81z1.onrender.com](https://hirewise-81z1.onrender.com)**
+**[https://hire-wise-xi.vercel.app/](https://hire-wise-xi.vercel.app/)**
 
 
 
