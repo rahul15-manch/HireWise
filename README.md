@@ -47,76 +47,78 @@
 ---
 
 ## 🏗️ System Architecture
-
 ```mermaid
+
 flowchart TD
 
 %% ================= CLIENT LAYER =================
 subgraph Clients["🌐 Client Layer"]
-    R["🧑‍💼 Recruiter Browser"]
-    C["👤 Candidate Browser"]
-    A["🛡️ Admin Browser"]
+    R["🧑‍💼 Recruiter Browser<br/>Assign Assessments"]
+    C["👤 Candidate Browser<br/>Take Interview"]
 
-    subgraph CandidateLogic["⚡ On-Device Intelligence"]
-        MP["🧠 MediaPipe Face Detection"]
-        MR["📹 MediaRecorder API"]
-        STT["🎙️ Web Speech STT"]
+    subgraph CandidateLogic["⚡ On-Device Processing"]
+        MP["🧠 Face Detection (MediaPipe)"]
+        MR["📹 Video Recording (MediaRecorder)"]
+        STT["🎙️ Speech-to-Text"]
     end
 
     C --> CandidateLogic
 end
 
 %% ================= BACKEND =================
-subgraph FastAPI["⚡ FastAPI Backend (Uvicorn)"]
-    Auth["🔐 Auth & Sessions<br/>Argon2 + Cookies"]
-    Dash["📊 Dashboard APIs<br/>/dashboard"]
+subgraph Backend["⚡ FastAPI Backend (Uvicorn)"]
+    Auth["🔐 Authentication & Sessions"]
+    Assess["📋 Assessment Manager<br/>/assign-test"]
     IV["📝 Interview Engine<br/>/interview"]
-    Tmpl["💾 Template Manager<br/>/templates"]
-    Admin["🛡️ Admin Controls<br/>/admin"]
-    UP["📤 Recording Upload<br/>/upload-recording"]
+    Eval["📊 Evaluation API<br/>/evaluate"]
+    Upload["📤 Upload Service<br/>/upload"]
 end
 
-%% ================= AI SERVICES =================
+%% ================= AI LAYER =================
 subgraph AI["🤖 AI Intelligence Layer"]
-    Gemini["✨ Gemini 1.5 Flash<br/>Question Generation · PDF Parsing"]
-    Groq["⚡ Groq · Llama 3.3 70B<br/>Answer Evaluation · Scoring"]
+    Gemini["✨ Gemini API<br/>PDF Parsing · Resume Analysis"]
+    Groq["⚡ Groq (Llama 3)<br/>Answer Evaluation · Scoring"]
 end
 
 %% ================= STORAGE =================
 subgraph Storage["🗄️ Data Layer"]
-    DB[("SQLite · hirewise.db<br/>Users · Interviews · Templates")]
-    Files["📁 Static Uploads<br/>/static/uploads"]
-    Recs["📁 Video Recordings<br/>/static/recordings"]
+    DB[("PostgreSQL<br/>Users · Interviews · Results")]
+    Files["📁 Resume Storage<br/>/uploads/resumes"]
+    Recs["📁 Interview Recordings<br/>/uploads/recordings"]
 end
 
 %% ================= FLOWS =================
+
+%% Recruiter Flow
 R --> Auth
+Auth --> Assess
+Assess --> DB
+Assess --> Gemini
+
+%% Candidate Flow
 C --> Auth
-A --> Auth
-
-Auth --> Dash
 Auth --> IV
-Auth --> Tmpl
-Auth --> Admin
 
-Dash --> Gemini
+%% Interview Process
 IV --> Gemini
 IV --> Groq
+IV --> Eval
 
-Dash --> DB
-IV --> DB
-Tmpl --> DB
-Admin --> DB
-UP --> DB
+%% Storage
+Eval --> DB
+Upload --> Files
+Upload --> Recs
+Upload --> DB
 
-IV --> Files
-MR -- "Uploads WebM" --> UP
-UP --> Recs
+%% Recording Flow
+MR -- "Upload Video" --> Upload
 
-CandidateLogic -- "Violation Logs" --> IV
+%% AI Integration
+Gemini --> DB
+Groq --> DB
 
 %% ================= STYLING =================
-style FastAPI fill:#1e293b,stroke:#6366f1,color:#f1f5f9
+style Backend fill:#1e293b,stroke:#6366f1,color:#f1f5f9
 style AI fill:#1a1033,stroke:#8b5cf6,color:#f1f5f9
 style Storage fill:#0f2027,stroke:#0ea5e9,color:#f1f5f9
 style Clients fill:#0f1f0f,stroke:#22c55e,color:#f1f5f9
