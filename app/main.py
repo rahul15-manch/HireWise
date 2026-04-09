@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 from app import models, database
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
+from datetime import datetime, timedelta
 
 # Database Setup
 try:
@@ -227,6 +228,10 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
         }
     else:
         interviews = db.query(models.Interview).filter(models.Interview.candidate_id == user.id).all()
+        # Populate recruiter details for each interview
+        for iv in interviews:
+            if iv.recruiter_id:
+                iv.recruiter = db.query(models.User).filter(models.User.id == iv.recruiter_id).first()
         
         # Calculate readiness score (average of non-zero scores)
         scores = []
@@ -252,7 +257,6 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
                     continue
         
         # Calculate streak and graph data
-        from datetime import datetime, timedelta
         now = datetime.utcnow()
         thirty_days_ago = now - timedelta(days=29)
         
@@ -268,8 +272,8 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
                 if day_str in streak_counts:
                     streak_counts[day_str] += 1
         
-        # Sorted list of counts (oldest first)
-        streak_graph_data = [streak_counts[day] for day in sorted(streak_counts.keys())]
+        # Sorted list of counts with dates (oldest first)
+        streak_graph_data = [{"date": day, "count": streak_counts[day]} for day in sorted(streak_counts.keys())]
         
         # Calculate consecutive streak (days with >= 1 interview)
         current_streak = 0
@@ -301,7 +305,9 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
         "interviews": interviews, 
         "stats": stats,
         "msg": msg, 
-        "json": json
+        "json": json,
+        "datetime": datetime,
+        "timedelta": timedelta
     })
 
 import google.generativeai as genai

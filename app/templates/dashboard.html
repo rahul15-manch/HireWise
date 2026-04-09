@@ -423,7 +423,100 @@
             background: rgba(0, 0, 0, 0.05);
         }
 
-        /* Responsive */
+        /* Streak Graph Styling */
+        .streak-container {
+            margin-top: 1rem;
+        }
+
+        .streak-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .streak-title {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .streak-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            padding: 4px;
+        }
+
+        .streak-box {
+            aspect-ratio: 1;
+            width: 100%;
+            max-width: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+
+        .streak-box:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        /* Tooltip */
+        .streak-box .tooltip {
+            visibility: hidden;
+            width: 140px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 6px 8px;
+            position: absolute;
+            z-index: 20;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.75rem;
+            pointer-events: none;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .streak-box .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        .streak-box:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Streak Colors */
+        .streak-0 {
+            background-color: #ebedf0;
+        }
+
+        .streak-1 {
+            background-color: #d8b4fe;
+        }
+
+        .streak-2-3 {
+            background-color: #a855f7;
+        }
+
+        .streak-4-plus {
+            background-color: #6b21a8;
+        }
+
         @media (max-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -652,23 +745,117 @@
                         <tr id="iv-details-{{ iv.id }}" style="display: none;">
                             <td colspan="5" style="background: rgba(0,0,0,0.01); padding: 1.5rem;">
                                 <!-- Details from original dashboard linked here -->
-                                <div style="display: flex; gap: 2rem;">
+                                <div style="display: flex; gap: 2rem; align-items: flex-start;">
                                     <div style="flex: 1;">
-                                        <h5 style="margin-bottom: 1rem;">AI Insights</h5>
+                                        <h5 style="margin-bottom: 1rem;">AI Insights & Interview Media</h5>
+
                                         {% if iv.evaluation %}
-                                        <p style="font-size: 0.9rem; line-height: 1.6;">{{ eval.analysis }}</p>
+                                        <div
+                                            style="margin-bottom: 1.5rem; padding: 1.25rem; background: rgba(99,102,241,0.05); border-radius: 12px; border-left: 4px solid var(--primary);">
+                                            <div
+                                                style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+                                                AI Performance Analysis</div>
+                                            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">{{
+                                                eval.analysis }}</p>
+                                        </div>
                                         {% else %}
-                                        <p style="color: var(--text-muted); font-size: 0.9rem;">Evaluation pending...
+                                        <p
+                                            style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border);">
+                                            <i class="fas fa-robot"></i> AI evaluation is currently being processed...
                                         </p>
                                         {% endif %}
+
+                                        <div style="margin-bottom: 2rem;">
+                                            <div
+                                                style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-file-alt"></i> Detailed Interview Transcript
+                                            </div>
+                                            <div
+                                                style="background: white; border: 1px solid var(--border); border-radius: 12px; max-height: 350px; overflow-y: auto; padding: 1.25rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                                {% set questions = json.loads(iv.questions) if iv.questions else [] %}
+                                                {% set responses = json.loads(iv.responses) if iv.responses else [] %}
+                                                {% for i in range(questions|length) %}
+                                                <div
+                                                    style="margin-bottom: 1.5rem; {% if not loop.last %}border-bottom: 1px solid #f1f5f9; padding-bottom: 1.25rem;{% endif %}">
+                                                    <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                                                        <span
+                                                            style="background: var(--primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0;">{{
+                                                            i + 1 }}</span>
+                                                        <div
+                                                            style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">
+                                                            {{ questions[i] }}</div>
+                                                    </div>
+                                                    <div style="margin-left: 32px;">
+                                                        <div
+                                                            style="font-size: 0.7rem; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                                                            Candidate Answer:</div>
+                                                        <div
+                                                            style="font-size: 0.9rem; line-height: 1.6; color: #475569; background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid #edf2f7;">
+                                                            {{ responses[i] if i < responses|length
+                                                                else 'No answer provided' }} </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+
+                                            {% if iv.recording_file %}
+                                            <div style="margin-bottom: 1rem;">
+                                                <div
+                                                    style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                                                    <i class="fas fa-video"></i> Full Interview Recording
+                                                </div>
+                                                <video controls
+                                                    style="width: 100%; border-radius: 12px; background: #000; box-shadow: var(--shadow-md); max-height: 300px;">
+                                                    <source src="/static/recordings/{{ iv.recording_file }}"
+                                                        type="video/webm">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div style="width: 320px; flex-shrink: 0;">
+                                            <h5 style="margin-bottom: 1rem;">Recruiter Review</h5>
+                                            <form action="/interview/{{ iv.id }}/review" method="POST"
+                                                style="background: var(--card); padding: 1.5rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                                                <div class="form-group" style="margin-bottom: 1.25rem;">
+                                                    <label
+                                                        style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: block;">Decision
+                                                        Notes</label>
+                                                    <textarea name="feedback" placeholder="Summarize your decision..."
+                                                        style="width: 100%; height: 110px; font-size: 0.95rem; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--background); transition: border-color 0.2s;">{{ iv.recruiter_feedback or '' }}</textarea>
+                                                </div>
+
+                                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                                    <button type="submit" name="decision" value="pass"
+                                                        class="btn btn-primary"
+                                                        style="background: var(--success); width: 100%; justify-content: center; font-size: 0.95rem; padding: 0.75rem; border-radius: 10px;">
+                                                        <i class="fas fa-check-circle"></i> Hire Candidate
+                                                    </button>
+                                                    <button type="submit" name="decision" value="fail"
+                                                        class="btn btn-primary"
+                                                        style="background: var(--danger); width: 100%; justify-content: center; font-size: 0.95rem; padding: 0.75rem; border-radius: 10px;">
+                                                        <i class="fas fa-times-circle"></i> Reject Application
+                                                    </button>
+                                                </div>
+                                            </form>
+
+                                            <div
+                                                style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                                <a href="/dashboard#iv-{{ iv.id }}" class="btn btn-ghost"
+                                                    style="font-size: 0.8rem; width: 100%; justify-content: center; border: 1px solid var(--border); background: white; border-radius: 8px;">
+                                                    <i class="fas fa-external-link-alt"></i> Share Report Link
+                                                </a>
+                                                <p
+                                                    style="font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">
+                                                    <i class="fas fa-shield-alt"></i> Decisions are final and will
+                                                    notify
+                                                    the candidate.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div style="width: 200px;">
-                                        <h5 style="margin-bottom: 1rem;">Quick Actions</h5>
-                                        <a href="/dashboard#iv-{{ iv.id }}" class="btn btn-primary"
-                                            style="font-size: 0.8rem; width: 100%; justify-content: center;">Full
-                                            Report</a>
-                                    </div>
-                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -713,6 +900,14 @@
                                 <i class="fas fa-briefcase"></i>
                             </div>
                             <div>
+                                {% if iv.candidate_summary == 'Practice Mock Interview' %}
+                                <div
+                                    style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-transform: uppercase; margin-bottom: 2px;">
+                                    Mock Interview</div>
+                                {% elif iv.recruiter %}
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px;">Assigned
+                                    by {{ iv.recruiter.full_name }}</div>
+                                {% endif %}
                                 <div style="font-weight: 600;">{{ iv.job_role }}</div>
                                 <div style="font-size: 0.8rem; color: var(--text-muted);">{{ iv.difficulty | capitalize
                                     }} Level • {{ iv.status | capitalize }}</div>
@@ -757,53 +952,35 @@
 
                 <div class="content-card">
                     <div class="card-header">
-                        <h3>Gamification</h3>
+                        <h3>Interview Streak (Last 30 Days) — {{ (datetime.utcnow()).strftime('%B %Y') }}</h3>
                     </div>
                     {% if user.role == 'candidate' or user.role == 'admin' %}
-                    <div style="margin-top: 1rem; margin-bottom: 2rem;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--warning);">
+                    <div class="streak-container">
+                        <div class="streak-heading">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: #f59e0b;">
                                 <i class="fas fa-fire"></i>
-                                <span style="font-weight: 700;">{{ stats.streak }} Day Streak</span>
+                                <span style="font-weight: 700; font-size: 1.1rem;">{{ stats.streak }} Day Streak</span>
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last 30 Days</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Consecutive practice days</div>
                         </div>
 
-                        <!-- Streak Graph (GitHub style) -->
-                        <div
-                            style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px solid var(--border);">
-                            {% for count in stats.streak_graph %}
-                            <div class="streak-square"
-                                style="aspect-ratio: 1; border-radius: 2px; position: relative; 
-                                        background: {% if count == 0 %}rgba(255,255,255,0.1){% elif count == 1 %}#818cf8{% elif count == 2 %}#6366f1{% else %}#4f46e5{% endif %};"
-                                title="{{ count }} interviews">
-                                <span class="streak-tooltip">{{ count }} interviews</span>
+                        <div class="streak-grid">
+                            {% for item in stats.streak_graph %}
+                            {% set count = item.count %}
+                            {% set date_obj = datetime.strptime(item.date, '%Y-%m-%d') %}
+                            {% set formatted_date = date_obj.strftime('%b %d') %}
+
+                            <div class="streak-box 
+                                    {% if count == 0 %}streak-0
+                                    {% elif count == 1 %}streak-1
+                                    {% elif count == 2 or count == 3 %}streak-2-3
+                                    {% else %}streak-4-plus{% endif %}">
+                                <div class="tooltip">
+                                    {{ count }} interview{{ 's' if count != 1 }} on {{ formatted_date }}
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
-                        <style>
-                            .streak-square:hover .streak-tooltip {
-                                display: block;
-                            }
-
-                            .streak-tooltip {
-                                display: none;
-                                position: absolute;
-                                bottom: 125%;
-                                left: 50%;
-                                transform: translateX(-50%);
-                                background: #1e293b;
-                                color: white;
-                                padding: 4px 8px;
-                                border-radius: 4px;
-                                font-size: 10px;
-                                white-space: nowrap;
-                                z-index: 100;
-                                border: 1px solid var(--border);
-                                pointer-events: none;
-                            }
-                        </style>
                     </div>
                     {% else %}
                     <div
@@ -892,8 +1069,34 @@
                     </select>
                 </div>
                 <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 1rem;">
-                    <input type="checkbox" name="generate_ai" id="genAI" checked style="width: auto;">
+                    <input type="checkbox" name="generate_ai" id="genAI" checked style="width: auto;"
+                        onchange="toggleManualInputs(this.checked)">
                     <label for="genAI" style="margin: 0;">Auto-generate AI Questions</label>
+                </div>
+
+                <div id="manualInputs"
+                    style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
+                    <div class="form-group">
+                        <label>Manual Questions (One per line)</label>
+                        <textarea name="manual_questions" placeholder="Enter custom questions here, one per line..."
+                            style="height: 80px; font-size: 0.9rem;"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label>Assessment PDF <span
+                            style="font-weight: 400; color: var(--text-muted);">(Optional)</span></label>
+                    <input type="file" name="pdf_file" accept=".pdf" style="font-size: 0.85rem; padding: 0.5rem;">
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Upload a PDF to extract
+                        specific technical questions.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Candidate Resume <span
+                            style="font-weight: 400; color: var(--text-muted);">(Optional)</span></label>
+                    <input type="file" name="resume_file" accept=".pdf" style="font-size: 0.85rem; padding: 0.5rem;">
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">AI will tailor the
+                        interview based on the candidate's background.</p>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
                     <button type="button" class="btn btn-ghost" onclick="closeModal('createModal')">Cancel</button>
@@ -910,6 +1113,11 @@
 
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
+        }
+
+        function toggleManualInputs(checked) {
+            const manualInputs = document.getElementById('manualInputs');
+            manualInputs.style.display = checked ? 'none' : 'block';
         }
 
         function toggleExpand(id) {
