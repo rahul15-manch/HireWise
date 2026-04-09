@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status, File, UploadFile
 import shutil
 import uuid
+import base64
+import json
 from pypdf import PdfReader
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -590,7 +592,16 @@ async def get_interview_page(request: Request, interview_id: int, db: Session = 
     if not user or interview.candidate_id != user.id:
         return HTMLResponse("Unauthorized", status_code=403)
 
-    return templates.TemplateResponse(request, "interview.html", {"interview": interview})
+    # Base64 encode the questions for the frontend to prevent easy inspection
+    try:
+        encoded_questions = base64.b64encode(interview.questions.encode()).decode()
+    except Exception:
+        encoded_questions = ""
+
+    return templates.TemplateResponse(request, "interview.html", {
+        "interview": interview,
+        "encoded_questions": encoded_questions
+    })
 
 @app.post("/interview/{interview_id}/submit")
 async def submit_answer(interview_id: int, request: Request, db: Session = Depends(database.get_db)):

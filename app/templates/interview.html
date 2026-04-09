@@ -545,7 +545,8 @@
 
     <script>
         const interviewId = {{ interview.id }};
-        const questions = {{ interview.questions | safe }};
+        const encodedQs = "{{ encoded_questions }}";
+        const questions = encodedQs ? JSON.parse(atob(encodedQs)) : [];
         let currentQIndex = 0;
         let recognition;
         let synth = window.speechSynthesis;

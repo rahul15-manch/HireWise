@@ -736,12 +736,15 @@
                                 </span>
                             </td>
                             <td>
+                                {% if user.role == 'recruiter' or user.role == 'admin' %}
                                 <button class="btn btn-ghost" style="padding: 4px;"
                                     onclick="toggleExpand('iv-details-{{ iv.id }}')">
                                     <i class="fas fa-chevron-down"></i>
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% if user.role == 'recruiter' or user.role == 'admin' %}
                         <tr id="iv-details-{{ iv.id }}" style="display: none;">
                             <td colspan="5" style="background: rgba(0,0,0,0.01); padding: 1.5rem;">
                                 <!-- Details from original dashboard linked here -->
