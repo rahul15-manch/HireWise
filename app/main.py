@@ -251,12 +251,48 @@ async def dashboard(request: Request, db: Session = Depends(database.get_db)):
                 except:
                     continue
         
+        # Calculate streak and graph data
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        thirty_days_ago = now - timedelta(days=29)
+        
+        # Initialize counts for each of the last 30 days
+        streak_counts = {}
+        for i in range(30):
+            day = (thirty_days_ago + timedelta(days=i)).strftime("%Y-%m-%d")
+            streak_counts[day] = 0
+            
+        for iv in interviews:
+            if iv.created_at:
+                day_str = iv.created_at.strftime("%Y-%m-%d")
+                if day_str in streak_counts:
+                    streak_counts[day_str] += 1
+        
+        # Sorted list of counts (oldest first)
+        streak_graph_data = [streak_counts[day] for day in sorted(streak_counts.keys())]
+        
+        # Calculate consecutive streak (days with >= 1 interview)
+        current_streak = 0
+        check_date = now
+        while True:
+            date_str = check_date.strftime("%Y-%m-%d")
+            if streak_counts.get(date_str, 0) > 0:
+                current_streak += 1
+                check_date -= timedelta(days=1)
+            else:
+                # If today has no interviews, check if yesterday had any (streak might still be alive)
+                if date_str == now.strftime("%Y-%m-%d"):
+                    check_date -= timedelta(days=1)
+                    continue
+                break
+
         stats = {
             "readiness_score": int(avg_score),
             "total_interviews": len(interviews),
             "cleared": len([i for i in interviews if i.status == "cleared"]),
             "skills": sorted(skills.items(), key=lambda x: x[1], reverse=True)[:5],
-            "streak": 3 # Placeholder
+            "streak": current_streak,
+            "streak_graph": streak_graph_data
         }
 
     msg = request.query_params.get("msg")
