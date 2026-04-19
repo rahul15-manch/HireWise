@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Report - HireWise</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius-lg: 1rem;
+            --radius-md: 0.75rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        .report-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .report-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .info-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .badge-primary {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        .score-section {
+            text-align: right;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 8px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .score-val {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .report-body {
+            padding: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .analysis-box {
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        .analysis-box.strengths {
+            background: rgba(34, 197, 94, 0.02);
+            border-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .analysis-box.weaknesses {
+            background: rgba(239, 68, 68, 0.02);
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .list-item {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .list-item i {
+            margin-top: 0.25rem;
+        }
+
+        .transcript-item {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transcript-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .question {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .q-num {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .answer {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            color: #475569;
+            border-left: 4px solid var(--border);
+        }
+
+        .recording-container {
+            margin-top: 1rem;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: #000;
+            box-shadow: var(--shadow-md);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .report-header {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .score-section {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/dashboard" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <div class="logo">
+                <img src="/static/img/logo.png" alt="HireWise" style="height: 32px;">
+            </div>
+        </div>
+
+        {% set eval = json.loads(interview.evaluation) if interview.evaluation else {} %}
+
+        <div class="report-card">
+            <div class="report-header">
+                <div class="user-info">
+                    <div class="info-group">
+                        <div class="label">Candidate</div>
+                        <div class="value">{{ interview.candidate.full_name }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="label">Job Role</div>
+                        <div class="value">{{ interview.job_role }} • {{ interview.difficulty | capitalize }}</div>
+                    </div>
+                    <div class="info-group" style="margin-top: 1rem;">
+                        <span class="badge 
+                            {% if interview.status == 'cleared' %}badge-success
+                            {% elif interview.status == 'rejected' %}badge-danger
+                            {% elif interview.status == 'completed' %}badge-primary
+                            {% else %}badge-warning{% endif %}">
+                            {{ interview.status | upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="score-section">
+                    <div class="score-circle"
+                        style="border-color: {% if (eval.score or 0) >= 70 %}var(--success){% elif (eval.score or 0) >= 40 %}var(--warning){% else %}var(--danger){% endif %};">
+                        <div class="score-val">{{ eval.score if eval.score is defined else '—' }}</div>
+                        <div class="score-label">Score</div>
+                    </div>
+                    <div class="label">Overall Readiness</div>
+                </div>
+            </div>
+
+            <div class="report-body">
+                <h3 class="section-title"><i class="fas fa-robot"></i> AI Analysis</h3>
+                <p style="margin-bottom: 2rem; font-size: 1.1rem; color: #475569; line-height: 1.7;">
+                    {{ eval.analysis or "Analysis is still being processed." }}
+                </p>
+
+                <div class="analysis-grid">
+                    <div class="analysis-box strengths">
+                        <h4 style="color: var(--success); margin-bottom: 1rem;"><i class="fas fa-plus-circle"></i> Key
+                            Strengths</h4>
+                        {% if eval.strengths %}
+                        {% for strength in eval.strengths %}
+                        <div class="list-item">
+                            <i class="fas fa-check" style="color: var(--success);"></i>
+                            <span>{{ strength }}</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">No specific strengths highlighted.</p>
+                        {% endif %}
+                    </div>
+                    <div class="analysis-box weaknesses">
+                        <h4 style="color: var(--danger); margin-bottom: 1rem;"><i class="fas fa-minus-circle"></i> Areas
+                            for Improvement</h4>
+                        {% if eval.weaknesses %}
+                        {% for weakness in eval.weaknesses %}
+                        <div class="list-item">
+                            <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                            <span>{{ weakness }}</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">No specific weaknesses highlighted.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if interview.recruiter_feedback %}
+                <div class="analysis-box" style="margin-bottom: 2rem; background: #fffbeb; border-color: #fef3c7;">
+                    <h4 style="color: var(--warning); margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i> Recruiter
+                        Feedback</h4>
+                    <p style="font-size: 1rem; color: #92400e;">{{ interview.recruiter_feedback }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if interview.recording_file %}
+        <div class="report-card">
+            <div class="report-body">
+                <h3 class="section-title"><i class="fas fa-video"></i> Interview Recording</h3>
+                <div class="recording-container">
+                    <video controls>
+                        <source src="/static/recordings/{{ interview.recording_file }}" type="video/webm">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="report-card">
+            <div class="report-body">
+                <h3 class="section-title"><i class="fas fa-file-alt"></i> Interview Transcript</h3>
+                <div class="transcript-list">
+                    {% set questions = json.loads(interview.questions) if interview.questions else [] %}
+                    {% set responses = json.loads(interview.responses) if interview.responses else [] %}
+
+                    {% for i in range(questions|length) %}
+                    <div class="transcript-item">
+                        <div class="question">
+                            <span class="q-num">{{ i + 1 }}</span>
+                            <span>{{ questions[i] }}</span>
+                        </div>
+                        <div class="answer">
+                            {{ responses[i] if i < responses|length else 'No answer provided' }} </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 4rem;">
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    &copy; {{ datetime.utcnow().year }} HireWise AI. All rights reserved.
+                </p>
+            </div>
+        </div>
+</body>
+
+</html>

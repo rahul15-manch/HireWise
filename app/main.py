@@ -770,6 +770,37 @@ async def upload_recording(interview_id: int, file: UploadFile = File(...), db: 
     print(f"[RECORDING] Interview {interview_id} recording saved: {filename} ({len(contents)//1024}KB)")
     return {"status": "saved", "filename": filename}
 
+@app.get("/interview/{interview_id}/report", response_class=HTMLResponse)
+async def get_report_page(request: Request, interview_id: int, db: Session = Depends(database.get_db)):
+    user_email = request.cookies.get("user_email")
+    if not user_email:
+        return RedirectResponse(url="/login")
+    
+    user = db.query(models.User).filter(models.User.email == user_email).first()
+    if not user:
+        return RedirectResponse(url="/login")
+
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    if not interview:
+        return HTMLResponse("Interview not found", status_code=404)
+    
+    # Check authorization: recruiter, candidate, or admin
+    is_authorized = (
+        user.role == "admin" or 
+        interview.recruiter_id == user.id or 
+        interview.candidate_id == user.id
+    )
+    
+    if not is_authorized:
+        return HTMLResponse("Unauthorized", status_code=403)
+
+    return templates.TemplateResponse(request, "report.html", {
+        "user": user,
+        "interview": interview,
+        "json": json,
+        "datetime": datetime
+    })
+
 @app.get("/logout")
 async def logout(request: Request):
     response = RedirectResponse(url="/login")

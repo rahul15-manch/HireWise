@@ -846,7 +846,7 @@
 
                                             <div
                                                 style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                                <a href="/dashboard#iv-{{ iv.id }}" class="btn btn-ghost"
+                                                <a href="/interview/{{ iv.id }}/report" class="btn btn-ghost"
                                                     style="font-size: 0.8rem; width: 100%; justify-content: center; border: 1px solid var(--border); background: white; border-radius: 8px;">
                                                     <i class="fas fa-external-link-alt"></i> Share Report Link
                                                 </a>
@@ -921,8 +921,7 @@
                         <a href="/interview/{{ iv.id }}" class="btn btn-primary"
                             style="padding: 0.5rem 1rem; font-size: 0.85rem;">Continue</a>
                         {% else %}
-                        <button class="btn btn-ghost" onclick="window.location.hash='iv-{{ iv.id }}'">View
-                            Report</button>
+                        <a href="/interview/{{ iv.id }}/report" class="btn btn-ghost">View Report</a>
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -1168,6 +1167,8 @@
             current += 1;
         }, 20);
 
+        {% endif %}
+
         // Handle Hash Navigation
         function handleHash() {
             const hash = window.location.hash;
@@ -1182,7 +1183,6 @@
         }
         window.addEventListener('load', handleHash);
         window.addEventListener('hashchange', handleHash);
-        {% endif %}
     </script>
 </body>
 
