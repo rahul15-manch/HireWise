@@ -307,12 +307,3 @@ pypdf
 
 ---
 
-## 📜 License
-
-MIT License © 2026 HireWise
-
----
-
-<div align="center">
-Built with ❤️ using FastAPI, Groq, and Google Gemini
-</div>
