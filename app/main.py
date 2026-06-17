@@ -13,6 +13,7 @@ from app import models, database
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 from datetime import datetime, timedelta
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # Database Setup
 try:
@@ -24,6 +25,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
+
+# Add Middleware for reverse proxies (Vercel) to fix HTTPS scheme detection
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 # Add SessionMiddleware for OAuth
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "supersecretkey"))
