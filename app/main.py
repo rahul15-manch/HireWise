@@ -29,8 +29,15 @@ app = FastAPI()
 # Add Middleware for reverse proxies (Vercel) to fix HTTPS scheme detection
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
-# Add SessionMiddleware for OAuth
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "supersecretkey"))
+# Check if we are in a production environment (like Vercel)
+is_production = os.getenv("VERCEL") == "1" or os.getenv("RENDER") == "1"
+
+# Add SessionMiddleware for OAuth with secure cookies in production
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=os.getenv("SECRET_KEY", "supersecretkey"),
+    https_only=is_production
+)
 
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
