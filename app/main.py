@@ -176,12 +176,7 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
         traceback.print_exc()
         import urllib.parse
         error_msg = urllib.parse.quote(str(e))
-    # New user: store info in session and redirect to role selection
-    request.session['google_user'] = {
-        'email': email,
-        'name': full_name
-    }
-    return RedirectResponse(url="/auth/google/role-selection", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url=f"/login?error=Callback+Failed:+{error_msg}")
 
 @app.get("/auth/google/role-selection", response_class=HTMLResponse)
 async def google_role_selection(request: Request):
