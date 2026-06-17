@@ -148,28 +148,34 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
             )
             user_info = user_resp.json()
             
+        if not user_info:
+            return RedirectResponse(url="/login?error=Failed+to+get+user+info")
+
+        email = user_info.get('email').lower()
+        full_name = user_info.get('name')
+
+        # Check if user exists
+        user = db.query(models.User).filter(models.User.email == email).first()
+
+        # If user exists, log them in
+        if user:
+            response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+            response.set_cookie(key="user_email", value=email, httponly=True)
+            return response
+
+        # New user: store info in session and redirect to role selection
+        request.session['google_user'] = {
+            'email': email,
+            'name': full_name
+        }
+        return RedirectResponse(url="/auth/google/role-selection", status_code=status.HTTP_303_SEE_OTHER)
+            
     except Exception as e:
-        print(f"OAuth Error: {e}")
+        print(f"OAuth/DB Error: {e}")
         import traceback
         traceback.print_exc()
         import urllib.parse
         error_msg = urllib.parse.quote(str(e))
-        return RedirectResponse(url=f"/login?error=OAuth+failed:+{error_msg}")
-    if not user_info:
-        return RedirectResponse(url="/login?error=Failed+to+get+user+info")
-
-    email = user_info.get('email').lower()
-    full_name = user_info.get('name')
-
-    # Check if user exists
-    user = db.query(models.User).filter(models.User.email == email).first()
-
-    # If user exists, log them in
-    if user:
-        response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-        response.set_cookie(key="user_email", value=email, httponly=True)
-        return response
-
     # New user: store info in session and redirect to role selection
     request.session['google_user'] = {
         'email': email,
