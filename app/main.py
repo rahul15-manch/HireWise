@@ -114,12 +114,40 @@ async def google_login(request: Request):
 
 @app.get("/auth/google/callback")
 async def auth_google_callback(request: Request, db: Session = Depends(database.get_db)):
-    if "localhost" in str(request.base_url) or "127.0.0.1" in str(request.base_url):
-        os.environ['AUTHLIB_INSECURE_TRANSPORT'] = 'true'
-        
+    code = request.query_params.get("code")
+    if not code:
+        return RedirectResponse(url="/login?error=No+code+provided")
+
     try:
-        # Authlib automatically determines the redirect_uri from the request scope.
-        token = await oauth.google.authorize_access_token(request)
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        if not redirect_uri:
+            redirect_uri = str(request.url_for('auth_google_callback'))
+            if "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri and "http://" in redirect_uri:
+                redirect_uri = redirect_uri.replace("http://", "https://")
+
+        # Manually exchange code for token (Stateless, ignores session cookies)
+        import httpx
+        async with httpx.AsyncClient() as client:
+            token_resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+                    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": redirect_uri
+                }
+            )
+            token_data = token_resp.json()
+            if "access_token" not in token_data:
+                raise Exception(f"Token error: {token_data}")
+
+            user_resp = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {token_data['access_token']}"}
+            )
+            user_info = user_resp.json()
+            
     except Exception as e:
         print(f"OAuth Error: {e}")
         import traceback
@@ -127,8 +155,6 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
         import urllib.parse
         error_msg = urllib.parse.quote(str(e))
         return RedirectResponse(url=f"/login?error=OAuth+failed:+{error_msg}")
-
-    user_info = token.get('userinfo')
     if not user_info:
         return RedirectResponse(url="/login?error=Failed+to+get+user+info")
 
