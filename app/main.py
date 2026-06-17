@@ -111,10 +111,20 @@ async def auth_google_callback(request: Request, db: Session = Depends(database.
         os.environ['AUTHLIB_INSECURE_TRANSPORT'] = 'true'
         
     try:
-        token = await oauth.google.authorize_access_token(request)
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        if not redirect_uri:
+            redirect_uri = str(request.url_for('auth_google_callback'))
+            if "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri and "http://" in redirect_uri:
+                redirect_uri = redirect_uri.replace("http://", "https://")
+                
+        token = await oauth.google.authorize_access_token(request, redirect_uri=redirect_uri)
     except Exception as e:
         print(f"OAuth Error: {e}")
-        return RedirectResponse(url="/login?error=OAuth+failed")
+        import traceback
+        traceback.print_exc()
+        import urllib.parse
+        error_msg = urllib.parse.quote(str(e))
+        return RedirectResponse(url=f"/login?error=OAuth+failed:+{error_msg}")
 
     user_info = token.get('userinfo')
     if not user_info:
