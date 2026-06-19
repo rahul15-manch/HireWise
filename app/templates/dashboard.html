@@ -750,9 +750,12 @@
                                 <!-- Details from original dashboard linked here -->
                                 <div style="display: flex; gap: 2rem; align-items: flex-start;">
                                     <div style="flex: 1;">
-                                        <h5 style="margin-bottom: 1rem;">AI Insights & Interview Media</h5>
-
-                                        {% if iv.evaluation %}
+                                        <h5 style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                            <span>AI Insights & Interview Media</span>
+                                            <span style="font-size: 0.8rem; background: rgba(165,111,255,0.15); color: #a56fff; padding: 4px 10px; border-radius: 20px; font-weight: 600;">
+                                                <i class="fas fa-lightbulb"></i> Hints Used: {{ iv.hints_used or 0 }}
+                                            </span>
+                                        </h5>                                        {% if iv.evaluation %}
                                         <div
                                             style="margin-bottom: 1.5rem; padding: 1.25rem; background: rgba(99,102,241,0.05); border-radius: 12px; border-left: 4px solid var(--primary);">
                                             <div
@@ -848,8 +851,15 @@
                                                 style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                                                 <a href="/interview/{{ iv.id }}/report" class="btn btn-ghost"
                                                     style="font-size: 0.8rem; width: 100%; justify-content: center; border: 1px solid var(--border); background: white; border-radius: 8px;">
-                                                    <i class="fas fa-external-link-alt"></i> Share Report Link
+                                                    <i class="fas fa-file-alt"></i> View Full Report
                                                 </a>
+                                                <form action="/interview/{{ iv.id }}/publish" method="POST" style="margin: 0;">
+                                                    <button type="submit" class="btn btn-ghost"
+                                                        style="font-size: 0.8rem; width: 100%; justify-content: center; border: 1px solid var(--border); background: {{ '#22c55e' if iv.is_published else '#3b82f6' }}; color: white; border-radius: 8px;">
+                                                        <i class="fas {{ 'fa-eye-slash' if iv.is_published else 'fa-eye' }}"></i> 
+                                                        {{ 'Unpublish Result' if iv.is_published else 'Publish Result to Candidate' }}
+                                                    </button>
+                                                </form>
                                                 <p
                                                     style="font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">
                                                     <i class="fas fa-shield-alt"></i> Decisions are final and will
@@ -920,8 +930,10 @@
                         {% if iv.status == 'pending' %}
                         <a href="/interview/{{ iv.id }}" class="btn btn-primary"
                             style="padding: 0.5rem 1rem; font-size: 0.85rem;">Continue</a>
+                        {% elif iv.is_published or iv.recruiter_id == iv.candidate_id or not iv.recruiter_id %}
+                        <a href="/interview/{{ iv.id }}/report" class="btn btn-ghost" style="color: var(--primary);">View Report</a>
                         {% else %}
-                        <a href="/interview/{{ iv.id }}/report" class="btn btn-ghost">View Report</a>
+                        <span class="btn btn-ghost" style="opacity: 0.5; cursor: not-allowed; padding: 0.5rem 1rem; font-size: 0.85rem;" title="Result is hidden until the recruiter publishes it"><i class="fas fa-lock"></i> Result Pending</span>
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -1077,6 +1089,11 @@
                     <label for="genAI" style="margin: 0;">Auto-generate AI Questions</label>
                 </div>
 
+                <div class="form-group" id="hintsGroup" style="display: flex; align-items: center; gap: 10px; margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <input type="checkbox" name="provide_hints" id="provideHints" style="width: auto;">
+                    <label for="provideHints" style="margin: 0;">Provide Hints to Candidate (Side Tab)</label>
+                </div>
+
                 <div id="manualInputs"
                     style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
                     <div class="form-group">
@@ -1120,7 +1137,11 @@
 
         function toggleManualInputs(checked) {
             const manualInputs = document.getElementById('manualInputs');
+            const hintsGroup = document.getElementById('hintsGroup');
             manualInputs.style.display = checked ? 'none' : 'block';
+            if (hintsGroup) {
+                hintsGroup.style.display = checked ? 'flex' : 'none';
+            }
         }
 
         function toggleExpand(id) {

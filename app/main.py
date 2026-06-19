@@ -18,6 +18,18 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 # Database Setup
 try:
     models.Base.metadata.create_all(bind=database.engine)
+    
+    # Simple auto-migrations for newly added columns
+    from sqlalchemy import text
+    with database.engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE interviews ADD COLUMN is_published BOOLEAN DEFAULT FALSE;"))
+        except Exception:
+            pass # Column likely already exists
+        try:
+            conn.execute(text("ALTER TABLE interviews ADD COLUMN hints_used INTEGER DEFAULT 0;"))
+        except Exception:
+            pass # Column likely already exists
 except Exception as e:
     print(f"Database setup error: {e}")
 
@@ -365,53 +377,209 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None):
+async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None, provide_hints: bool = False):
     try:
         chat = groq_client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
                     "content": (
-                        "You are a world-class interviewer trained across multiple domains including "
-                        "Software Engineering, Machine Learning, Product Management, Sales, and Business Leadership.\n\n"
-                        "Your job is to generate highly relevant, role-specific interview questions that reflect "
-                        "real-world hiring practices at top companies (FAANG-level, startups, enterprise).\n\n"
-                        "CRITICAL: You MUST adapt questions based on the JOB ROLE.\n\n"
-                        "Role-Based Question Strategy:\n"
-                        "1. TECHNICAL ROLES (Software Engineer, ML Engineer, Data Scientist):\n"
-                        "- Coding problems (DSA, algorithms)\n"
-                        "- System design (only for medium/hard)\n"
-                        "- Debugging and optimization\n"
-                        "- Real-world architecture challenges\n\n"
-                        "2. PRODUCT ROLES (Product Manager, Product Analyst):\n"
-                        "- Product design and feature thinking\n"
-                        "- Metrics and KPIs\n"
-                        "- User-centric problem solving\n"
-                        "- Trade-offs and prioritization\n\n"
-                        "3. SALES ROLES (Sales Executive, Business Development):\n"
-                        "- Sales scenarios (closing deals, objections)\n"
-                        "- Customer psychology\n"
-                        "- Pipeline management\n"
-                        "- Revenue strategy\n"
-                        "- NO coding or system design questions\n\n"
-                        "4. MANAGEMENT / HR ROLES:\n"
-                        "- Leadership scenarios\n"
-                        "- Conflict resolution\n"
-                        "- Decision making under uncertainty\n"
-                        "- Team performance and motivation\n"
-                        "- NO coding or system design questions\n\n"
-                        "Strict Rules:\n"
-                        "- NEVER ask coding or system design questions for non-technical roles.\n"
-                        "- ALWAYS align questions with real interview practices for that role.\n"
-                        "- Avoid irrelevant or mismatched questions.\n"
-                        "- Questions must feel realistic and currently asked in 2025+ interviews.\n"
-                        "- Output ONLY valid JSON.\n"
-                        "- No explanations outside JSON.\n\n"
-                        "Output Format:\n"
+                        "You are HireWise Interview Intelligence Engine.\n\n"
+                        "You are a world-class interviewer trained on hiring practices from FAANG companies, startups, enterprise organizations, consulting firms, product companies, sales organizations, and HR leadership teams.\n\n"
+                        "Your job is NOT merely to generate interview questions.\n\n"
+                        "Your job is to design a complete interview experience that helps recruiters evaluate:\n\n"
+                        "1. Communication Skills\n"
+                        "2. Resume Authenticity\n"
+                        "3. Technical Depth\n"
+                        "4. Problem Solving Ability\n"
+                        "5. Decision Making\n"
+                        "6. Leadership Potential\n"
+                        "7. Collaboration Skills\n"
+                        "8. Learning Mindset\n"
+                        "9. Domain Expertise\n"
+                        "10. Culture Fit\n\n"
+                        "--------------------------------------------------\n"
+                        "INTERVIEW GENERATION RULES\n"
+                        "--------------------------------------------------\n\n"
+                        "The number of questions MUST be dynamic.\n\n"
+                        "Decide the number of questions based on:\n\n"
+                        "- Role complexity\n"
+                        "- Resume richness\n"
+                        "- Experience level\n"
+                        "- Difficulty level\n\n"
+                        "Examples:\n\n"
+                        "Intern:\n"
+                        "8-12 Questions\n\n"
+                        "Junior:\n"
+                        "10-15 Questions\n\n"
+                        "Mid-Level:\n"
+                        "12-18 Questions\n\n"
+                        "Senior:\n"
+                        "15-25 Questions\n\n"
+                        "Leadership:\n"
+                        "18-30 Questions\n\n"
+                        "Never generate a fixed number.\n\n"
+                        "--------------------------------------------------\n"
+                        "MANDATORY INTERVIEW SECTIONS\n"
+                        "--------------------------------------------------\n\n"
+                        "Every interview MUST include:\n\n"
+                        "SECTION A: Candidate Discovery\n"
+                        "(2-4 questions)\n\n"
+                        "Examples:\n"
+                        "- Introduce yourself without repeating your resume.\n"
+                        "- Tell me something important about you that is not mentioned in your resume.\n"
+                        "- What motivates you professionally?\n"
+                        "- What are your strengths and areas you are currently improving?\n\n"
+                        "SECTION B: Resume Validation\n"
+                        "(2-5 questions)\n\n"
+                        "For every major project, internship, achievement, or tool mentioned:\n\n"
+                        "Ask:\n"
+                        "- Why was this project built?\n"
+                        "- What challenge did you personally solve?\n"
+                        "- What would you redesign today?\n"
+                        "- What tradeoffs were made?\n\n"
+                        "SECTION C: Role-Specific Evaluation\n"
+                        "(Dynamic)\n\n"
+                        "Questions must align to role.\n\n"
+                        "--------------------------------------------------\n"
+                        "TECHNICAL ROLE RULES\n"
+                        "--------------------------------------------------\n\n"
+                        "Examples:\n"
+                        "Software Engineer\n"
+                        "ML Engineer\n"
+                        "AI Engineer\n"
+                        "Data Scientist\n"
+                        "Backend Engineer\n"
+                        "Frontend Engineer\n"
+                        "Full Stack Engineer\n\n"
+                        "Question Mix:\n\n"
+                        "- Conceptual Questions\n"
+                        "- Practical Engineering Questions\n"
+                        "- Real World Scenarios\n"
+                        "- Debugging Questions\n"
+                        "- Architecture Questions\n"
+                        "- DSA Questions\n"
+                        "- Behavioral Questions\n\n"
+                        "MANDATORY:\n\n"
+                        "At least 1 DSA question.\n\n"
+                        "DSA Question Format:\n\n"
                         "{\n"
-                        "  \"candidate_summary\": \"Concise summary OR null\",\n"
-                        "  \"questions\": [\n"
-                        "    \"Q1\", \"Q2\", \"Q3\", \"Q4\", \"Q5\", \"Q6\", \"Q7\"\n"
+                        "  \"type\": \"dsa\",\n"
+                        "  \"title\": \"...\",\n"
+                        "  \"problem_statement\": \"...\",\n"
+                        "  \"input_format\": \"...\",\n"
+                        "  \"output_format\": \"...\",\n"
+                        "  \"constraints\": \"...\",\n"
+                        "  \"sample_input\": \"...\",\n"
+                        "  \"sample_output\": \"...\",\n"
+                        "  \"expected_approach\": \"...\",\n"
+                        "  \"difficulty\": \"Easy/Medium/Hard\"\n"
+                        "}\n\n"
+                        "--------------------------------------------------\n"
+                        "ML / AI SPECIFIC RULES\n"
+                        "--------------------------------------------------\n\n"
+                        "For AI/ML roles include:\n\n"
+                        "- Model Selection\n"
+                        "- Feature Engineering\n"
+                        "- Evaluation Metrics\n"
+                        "- Deployment\n"
+                        "- MLOps\n"
+                        "- LLMs\n"
+                        "- Vector Databases\n"
+                        "- RAG Systems\n"
+                        "- Fine-Tuning\n"
+                        "- Prompt Engineering\n"
+                        "- AI System Design\n\n"
+                        "Scenario questions MUST include context.\n\n"
+                        "Bad:\n\n"
+                        "\"Design a neural network.\"\n\n"
+                        "Good:\n\n"
+                        "\"You are building a resume screening model for 500,000 applicants. Dataset contains 120 features, 20% missing values and severe class imbalance. How would you approach feature engineering, model selection, validation, and deployment?\"\n\n"
+                        "Every scenario should provide enough context for the candidate to reason.\n\n"
+                        "--------------------------------------------------\n"
+                        "PRODUCT ROLES\n"
+                        "--------------------------------------------------\n\n"
+                        "Include:\n\n"
+                        "- Product Design\n"
+                        "- Prioritization\n"
+                        "- Metrics\n"
+                        "- User Research\n"
+                        "- Stakeholder Management\n"
+                        "- Tradeoffs\n\n"
+                        "--------------------------------------------------\n"
+                        "SALES ROLES\n"
+                        "--------------------------------------------------\n\n"
+                        "Include:\n\n"
+                        "- Discovery Calls\n"
+                        "- Objection Handling\n"
+                        "- Closing Strategy\n"
+                        "- Pipeline Management\n"
+                        "- Revenue Growth\n\n"
+                        "Never include coding.\n\n"
+                        "--------------------------------------------------\n"
+                        "HR / MANAGEMENT ROLES\n"
+                        "--------------------------------------------------\n\n"
+                        "Include:\n\n"
+                        "- Conflict Resolution\n"
+                        "- Hiring Decisions\n"
+                        "- Leadership\n"
+                        "- Coaching\n"
+                        "- Team Performance\n"
+                        "- Difficult Conversations\n\n"
+                        "Never include coding.\n\n"
+                        "--------------------------------------------------\n"
+                        "QUESTION QUALITY RULES\n"
+                        "--------------------------------------------------\n\n"
+                        "Questions should:\n\n"
+                        "- Feel realistic\n"
+                        "- Reflect 2025+ interviews\n"
+                        "- Avoid textbook definitions\n"
+                        "- Test reasoning\n"
+                        "- Increase in difficulty gradually\n"
+                        "- Be role specific\n"
+                        "- Be resume aware\n\n"
+                        "--------------------------------------------------\n"
+                        "RECRUITER HINTS\n"
+                        "--------------------------------------------------\n\n"
+                        "For every technical or scenario question provide interviewer guidance.\n\n"
+                        "Example:\n\n"
+                        "{\n"
+                        "  \"question\": \"...\",\n"
+                        "  \"evaluation_points\": [\n"
+                        "    \"...\",\n"
+                        "    \"...\",\n"
+                        "    \"...\"\n"
+                        "  ],\n"
+                        "  \"red_flags\": [\n"
+                        "    \"...\",\n"
+                        "    \"...\"\n"
+                        "  ]\n"
+                        "}\n\n"
+                        "These hints help recruiters evaluate answers consistently.\n\n"
+                        "--------------------------------------------------\n"
+                        "OUTPUT FORMAT\n"
+                        "--------------------------------------------------\n\n"
+                        "Return ONLY valid JSON.\n\n"
+                        "{\n"
+                        "  \"candidate_summary\": \"...\",\n"
+                        "  \"recommended_question_count\": 14,\n"
+                        "  \"interview_sections\": [\n"
+                        "    {\n"
+                        "      \"section\": \"Candidate Discovery\",\n"
+                        "      \"questions\": [...]\n"
+                        "    },\n"
+                        "    {\n"
+                        "      \"section\": \"Resume Validation\",\n"
+                        "      \"questions\": [...]\n"
+                        "    },\n"
+                        "    {\n"
+                        "      \"section\": \"Technical Assessment\",\n"
+                        "      \"questions\": [...]\n"
+                        "    },\n"
+                        "    {\n"
+                        "      \"section\": \"Behavioral Assessment\",\n"
+                        "      \"questions\": [...]\n"
+                        "    }\n"
                         "  ]\n"
                         "}"
                     )
@@ -419,42 +587,12 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                 {
                     "role": "user",
                     "content": (
-                        f"Generate exactly 7 high-quality interview questions for a {difficulty}-level {job_role} candidate.\n\n"
+                        f"Job Role: {job_role}\n"
+                        f"Difficulty: {difficulty}\n\n"
                         f"Resume:\n"
                         f"{resume_text[:4000] if resume_text else 'No resume provided.'}\n\n"
-                        "Instructions:\n"
-                        f"- Strictly match {difficulty} difficulty.\n"
-                        "- Adapt question types based on the JOB ROLE.\n\n"
-                        "Dynamic Question Mix Rules:\n"
-                        "- For TECHNICAL roles:\n"
-                        "  → 2 conceptual\n"
-                        "  → 2 coding/problem-solving\n"
-                        "  → 2 system design / real-world\n"
-                        "  → 1 behavioral\n\n"
-                        "- For PRODUCT roles:\n"
-                        "  → 2 product design\n"
-                        "  → 2 metrics/analytics\n"
-                        "  → 2 scenario-based\n"
-                        "  → 1 behavioral\n\n"
-                        "- For SALES roles:\n"
-                        "  → 3 real-world sales scenarios\n"
-                        "  → 2 customer/objection handling\n"
-                        "  → 1 strategy question\n"
-                        "  → 1 behavioral\n\n"
-                        "- For MANAGEMENT roles:\n"
-                        "  → 3 leadership scenarios\n"
-                        "  → 2 decision-making / conflict\n"
-                        "  → 1 strategy question\n"
-                        "  → 1 behavioral\n\n"
-                        "Resume Personalization:\n"
-                        "- If resume exists → ask project-specific, tool-based questions\n"
-                        "- If not → ask realistic scenario-based questions\n\n"
-                        "Important Constraints:\n"
-                        "- DO NOT include coding/system design for non-technical roles\n"
-                        "- Questions must reflect real interviews happening in 2025+\n"
-                        "- Avoid generic textbook questions\n"
-                        "- Make them practical and slightly increasing in difficulty\n\n"
-                        "Return ONLY valid JSON."
+                        f"{'CRITICAL REQUIREMENT: The recruiter has requested HINTS. For EVERY question you generate, you MUST include a `candidate_hint` field with a helpful guiding hint.' if provide_hints else ''}\n"
+                        "Please generate the interview following the exact rules and JSON format specified."
                     )
                 }
             ],
@@ -463,7 +601,20 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
             response_format={"type": "json_object"}
         )
         result = json.loads(chat.choices[0].message.content)
-        return result.get("questions", []), result.get("candidate_summary", "")
+        
+        # Extract the rich questions from the sections
+        rich_questions = []
+        sections = result.get("interview_sections", [])
+        for sec in sections:
+            for q in sec.get("questions", []):
+                # Ensure the section name is passed down for context if we want it
+                if isinstance(q, dict):
+                    q["_section"] = sec.get("section", "")
+                    rich_questions.append(q)
+                elif isinstance(q, str):
+                    rich_questions.append({"question": q, "_section": sec.get("section", "")})
+                    
+        return rich_questions, result.get("candidate_summary", "")
     except Exception as e:
         print(f"Groq Question Generation Error: {e}")
         fallback_questions = [
@@ -482,6 +633,7 @@ async def create_interview(
     job_role: str = Form(...),
     difficulty: str = Form(...),
     generate_ai: bool = Form(False),
+    provide_hints: bool = Form(False),
     manual_questions: str = Form(None),
     pdf_file: UploadFile = File(None),
     resume_file: UploadFile = File(None),
@@ -520,7 +672,7 @@ async def create_interview(
             print(f"Resume Extraction Error: {e}")
 
     if generate_ai:
-        questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty, resume_text)
+        questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty, resume_text, provide_hints)
 
     elif manual_questions:
         questions_list = [q.strip() for q in manual_questions.split('\n') if q.strip()]
@@ -622,7 +774,8 @@ async def create_mock_interview(
         difficulty=difficulty,
         questions=json.dumps(questions_list),
         candidate_summary="Practice Mock Interview",
-        status="pending"
+        status="pending",
+        is_published=True
     )
     
     db.add(new_interview)
@@ -852,6 +1005,42 @@ async def upload_recording(interview_id: int, file: UploadFile = File(...), db: 
     print(f"[RECORDING] Interview {interview_id} recording saved: {filename} ({len(contents)//1024}KB)")
     return {"status": "saved", "filename": filename}
 
+@app.post("/interview/{interview_id}/publish")
+async def publish_interview_result(request: Request, interview_id: int, db: Session = Depends(database.get_db)):
+    user_email = request.cookies.get("user_email")
+    if not user_email:
+        return RedirectResponse(url="/login")
+        
+    user = db.query(models.User).filter(models.User.email == user_email).first()
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    
+    if not user or not interview:
+        return HTMLResponse("Not found", status_code=404)
+        
+    if user.role != "admin" and interview.recruiter_id != user.id:
+        return HTMLResponse("Unauthorized", status_code=403)
+        
+    interview.is_published = not interview.is_published
+    db.commit()
+    
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/interview/{interview_id}/hint")
+async def record_hint_used(request: Request, interview_id: int, db: Session = Depends(database.get_db)):
+    user_email = request.cookies.get("user_email")
+    if not user_email:
+        return {"status": "error", "msg": "Unauthorized"}
+        
+    user = db.query(models.User).filter(models.User.email == user_email).first()
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    
+    if not user or not interview or interview.candidate_id != user.id:
+        return {"status": "error", "msg": "Unauthorized"}
+        
+    interview.hints_used = (interview.hints_used or 0) + 1
+    db.commit()
+    return {"status": "success", "hints_used": interview.hints_used}
+
 @app.get("/interview/{interview_id}/report", response_class=HTMLResponse)
 async def get_report_page(request: Request, interview_id: int, db: Session = Depends(database.get_db)):
     user_email = request.cookies.get("user_email")
@@ -866,15 +1055,19 @@ async def get_report_page(request: Request, interview_id: int, db: Session = Dep
     if not interview:
         return HTMLResponse("Interview not found", status_code=404)
     
-    # Check authorization: recruiter, candidate, or admin
-    is_authorized = (
-        user.role == "admin" or 
-        interview.recruiter_id == user.id or 
-        interview.candidate_id == user.id
-    )
+    is_recruiter_or_admin = user.role == "admin" or interview.recruiter_id == user.id
     
-    if not is_authorized:
+    if not is_recruiter_or_admin and interview.candidate_id != user.id:
         return HTMLResponse("Unauthorized", status_code=403)
+        
+    if interview.candidate_id == user.id and not is_recruiter_or_admin:
+        if not interview.is_published:
+            return HTMLResponse(
+                "<div style='padding: 3rem; text-align: center; font-family: sans-serif;'>"
+                "<h2>Result Hidden</h2><p>Your interview report is currently under review and hasn't been published by the recruiter yet.</p>"
+                "<a href='/dashboard' style='color: #4285f4; text-decoration: none;'>Return to Dashboard</a></div>", 
+                status_code=403
+            )
 
     return templates.TemplateResponse(request, "report.html", {
         "user": user,

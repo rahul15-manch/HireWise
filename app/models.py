@@ -34,6 +34,8 @@ class Interview(Base):
     cheat_flagged = Column(Boolean, default=False) # True if candidate was caught cheating
     cheat_log = Column(String, nullable=True) # JSON array of timestamped violation events
     recording_file = Column(String, nullable=True) # Path to candidate's interview video recording
+    is_published = Column(Boolean, default=False) # True if recruiter published results
+    hints_used = Column(Integer, default=0) # Number of hints candidate used
 
     recruiter = relationship("User", back_populates="interviews_created", foreign_keys=[recruiter_id])
     candidate = relationship("User", back_populates="interviews_assigned", foreign_keys=[candidate_id])

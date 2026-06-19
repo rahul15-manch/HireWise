@@ -389,6 +389,17 @@
         <button onclick="returnToFullscreen()">🖥️ Return to Fullscreen</button>
     </div>
 
+    <!-- ── Hints Panel ── -->
+    <div id="hints-panel" style="position: fixed; right: -320px; top: 15%; width: 320px; background: #1a1d27; border: 1px solid #2d2f3a; border-right: none; border-radius: 12px 0 0 12px; box-shadow: -4px 0 20px rgba(0,0,0,0.5); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; padding: 1.5rem; display: none;">
+        <button id="hint-toggle-btn" onclick="toggleHint()" style="position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: #a56fff; color: white; border: none; border-radius: 8px 0 0 8px; cursor: pointer; box-shadow: -2px 0 8px rgba(0,0,0,0.3); transition: background 0.2s; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-lightbulb"></i>
+        </button>
+        <h3 style="margin-top: 0; color: #a56fff; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-lightbulb"></i> Interview Hint
+        </h3>
+        <p id="hint-text" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 0; white-space: pre-wrap;"></p>
+    </div>
+
     <!-- ── Main Layout ── -->
     <div class="main-wrapper">
         {% if interview.pdf_file %}
@@ -675,10 +686,121 @@
             editor.session.setMode("ace/mode/" + lang);
         }
 
-        function detectCodingQuestion(text) {
+        function getQuestionText(q) {
+            if (typeof q === 'string') return q;
+            if (q.type === 'dsa' || q.problem_statement) {
+                return `Coding Problem: ${q.title || ''}. ${q.problem_statement || ''}`;
+            }
+            if (q.question) return q.question;
+            return JSON.stringify(q);
+        }
+
+        function getTTSQuestionText(q) {
+            if (typeof q === 'string') return q;
+            // Shorten TTS for DSA questions to avoid reading lengthy constraints and samples
+            if (q.type === 'dsa' || q.problem_statement) {
+                let text = `We have a coding problem for you. `;
+                if (q.title) text += `It is called ${q.title}. `;
+                text += `Please read the problem details on the screen.`;
+                return text;
+            }
+            if (q.question) {
+                let tts = q.question;
+                if (q._section) {
+                    tts = `Moving on to ${q._section}. ` + tts;
+                }
+                return tts;
+            }
+            return "Please proceed with the current question on screen.";
+        }
+
+        function detectCodingQuestion(q) {
+            if (typeof q === 'object' && (q.type === 'dsa' || q.problem_statement)) return true;
+            const text = getQuestionText(q);
             const codeKeywords = ['code', 'function', 'implement', 'algorithm', 'complexity', 'write a', 'program', 'syntax', 'return', 'class', 'method'];
             const lowerText = text.toLowerCase();
             return codeKeywords.some(kw => lowerText.includes(kw));
+        }
+
+        let usedHintsSet = new Set();
+        function toggleHint() {
+            const panel = document.getElementById('hints-panel');
+            if (panel.style.right === '0px') {
+                panel.style.right = '-320px';
+            } else {
+                panel.style.right = '0px';
+                if (!usedHintsSet.has(currentQIndex)) {
+                    usedHintsSet.add(currentQIndex);
+                    fetch(`/interview/${interviewId}/hint`, { method: 'POST' })
+                        .catch(err => console.error("Error logging hint:", err));
+                }
+            }
+        }
+
+        function renderQuestionUI(q) {
+            const container = document.getElementById('question-text');
+            const hintsPanel = document.getElementById('hints-panel');
+            const hintText = document.getElementById('hint-text');
+
+            if (q && q.candidate_hint) {
+                if (hintsPanel) hintsPanel.style.display = 'block';
+                if (hintsPanel) hintsPanel.style.right = '-320px'; // start hidden
+                if (hintText) hintText.textContent = q.candidate_hint;
+            } else {
+                if (hintsPanel) hintsPanel.style.display = 'none';
+                if (hintText) hintText.textContent = '';
+            }
+
+            if (typeof q === 'string') {
+                container.textContent = q;
+                return;
+            }
+
+            let html = '';
+            if (q._section) {
+                html += `<div style="font-size:0.8rem; color:#a56fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight: 600;">${q._section}</div>`;
+            }
+
+            if (q.type === 'dsa' || q.problem_statement) {
+                html += `
+                    <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 12px; color: #fff;">
+                        ${q.title || 'Coding Problem'} 
+                        ${q.difficulty ? `<span style="font-size:0.75rem; background: rgba(165,111,255,0.15); color: #a56fff; padding: 2px 8px; border-radius: 12px; vertical-align: middle; margin-left: 8px;">${q.difficulty}</span>` : ''}
+                    </div>
+                    <div style="font-size: 0.95rem; line-height: 1.5; color: #ccc; margin-bottom: 1.2rem;">
+                        ${q.problem_statement || ''}
+                    </div>
+                `;
+                
+                const metaFields = [
+                    {key: 'input_format', label: 'Input Format'},
+                    {key: 'output_format', label: 'Output Format'},
+                    {key: 'constraints', label: 'Constraints'},
+                    {key: 'sample_input', label: 'Sample Input'},
+                    {key: 'sample_output', label: 'Sample Output'},
+                ];
+
+                let metaHtml = '<div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; border: 1px solid #2d2f3a; font-size: 0.85rem; color: #aaa;">';
+                let hasMeta = false;
+                for (const field of metaFields) {
+                    if (q[field.key]) {
+                        hasMeta = true;
+                        metaHtml += `<div style="margin-bottom: 10px;">
+                            <strong style="color: #4285f4; display:block; margin-bottom:4px;">${field.label}:</strong>
+                            <div style="white-space: pre-wrap; font-family: monospace; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border: 1px solid #2d2f3a;">${q[field.key]}</div>
+                        </div>`;
+                    }
+                }
+                metaHtml += '</div>';
+
+                if (hasMeta) {
+                    html += metaHtml;
+                }
+            } else {
+                html += `<div>${q.question || getQuestionText(q)}</div>`;
+            }
+
+            container.innerHTML = html;
         }
 
         function toggleCodeMode() {
@@ -903,7 +1025,7 @@
             };
         }
 
-        function speakQuestion(text) {
+        function speakQuestion(qObj) {
             // Capture this call's generation number.
             // Any older onend/setTimeout that still fires will see myGen !== speechGen and bail.
             const myGen = ++speechGen;
@@ -911,8 +1033,9 @@
             if (recognition) { try { recognition.abort(); } catch (e) { } }
             synth.cancel();
 
-            // Update UI
-            document.getElementById('question-text').textContent = text;
+            // Update UI dynamically based on the object schema
+            renderQuestionUI(qObj);
+
             document.getElementById('status').textContent = 'AI Speaking...';
             document.getElementById('visualizer').classList.remove('recording');
             document.getElementById('voice-indicator').textContent = 'AI is asking a question...';
@@ -920,7 +1043,7 @@
             document.getElementById('answer-input').value = '';
 
             // Handle Code Editor Visibility & Toggle Button
-            const isCoding = detectCodingQuestion(text);
+            const isCoding = detectCodingQuestion(qObj);
             const toggleBtn = document.getElementById('toggle-code-btn');
             toggleBtn.style.display = 'inline-block'; // Always show toggle once interview starts
 
@@ -936,11 +1059,12 @@
                 toggleBtn.innerHTML = '<i class="fas fa-keyboard"></i> Switch to Code Editor';
             }
 
+            const ttsText = getTTSQuestionText(qObj);
 
             setTimeout(() => {
                 if (myGen !== speechGen) return; // superseded — another question started
 
-                const utter = new SpeechSynthesisUtterance(text);
+                const utter = new SpeechSynthesisUtterance(ttsText);
 
                 utter.onstart = () => {
                     if (recognition) { try { recognition.abort(); } catch (e) { } }
