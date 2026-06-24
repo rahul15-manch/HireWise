@@ -632,7 +632,14 @@
             camEl.style.color = micEl.style.color = '#888';
 
             try {
-                permStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                permStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
                 camEl.textContent = '✅ Camera';
                 micEl.textContent = '✅ Microphone';
                 camEl.style.color = micEl.style.color = '#4ade80';
@@ -1065,6 +1072,16 @@
                 if (myGen !== speechGen) return; // superseded — another question started
 
                 const utter = new SpeechSynthesisUtterance(ttsText);
+                utter.rate = 1.0;
+                utter.pitch = 1.0;
+                
+                const voices = synth.getVoices();
+                if (voices.length > 0) {
+                    const bestVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Natural')) 
+                                      || voices.find(v => v.lang === 'en-US') 
+                                      || voices[0];
+                    utter.voice = bestVoice;
+                }
 
                 utter.onstart = () => {
                     if (recognition) { try { recognition.abort(); } catch (e) { } }
