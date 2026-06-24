@@ -371,11 +371,11 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import json
-from groq import Groq
+from groq import AsyncGroq
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+groq_client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
 
 async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None, provide_hints: bool = False, custom_prompt: str = None):
     try:
@@ -392,7 +392,7 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                 "Return ONLY valid JSON.\n\n"
                 "{\n"
                 "  \"candidate_summary\": \"...\",\n"
-                "  \"recommended_question_count\": 14,\n"
+                "  \"recommended_question_count\": 7,\n"
                 "  \"interview_sections\": [\n"
                 "    {\n"
                 "      \"section\": \"Candidate Discovery\",\n"
@@ -400,7 +400,20 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                 "    },\n"
                 "    {\n"
                 "      \"section\": \"Technical Assessment\",\n"
-                "      \"questions\": [...]\n"
+                "      \"questions\": [\n"
+                "        {\n"
+                "          \"type\": \"dsa\",\n"
+                "          \"title\": \"...\",\n"
+                "          \"problem_statement\": \"...\",\n"
+                "          \"input_format\": \"...\",\n"
+                "          \"output_format\": \"...\",\n"
+                "          \"constraints\": \"...\",\n"
+                "          \"starter_code\": {\"python\": \"def solve(...):\\n    pass\", \"javascript\": \"function solve(...) {\\n    \\n}\"},\n"
+                "          \"visible_test_cases\": [{\"input\": \"...\", \"python_test\": \"print(solve(...))\", \"javascript_test\": \"console.log(solve(...));\", \"expected_output\": \"...\"}],\n"
+                "          \"hidden_test_cases\": [{\"input\": \"...\", \"python_test\": \"print(solve(...))\", \"javascript_test\": \"console.log(solve(...));\", \"expected_output\": \"...\"}],\n"
+                "          \"difficulty\": \"Easy/Medium/Hard\"\n"
+                "        }\n"
+                "      ]\n"
                 "    }\n"
                 "  ]\n"
                 "}"
@@ -432,16 +445,16 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                         "- Difficulty level\n\n"
                         "Examples:\n\n"
                         "Intern:\n"
-                        "8-12 Questions\n\n"
+                        "4-6 Questions\n\n"
                         "Junior:\n"
-                        "10-15 Questions\n\n"
+                        "5-7 Questions\n\n"
                         "Mid-Level:\n"
-                        "12-18 Questions\n\n"
+                        "6-8 Questions\n\n"
                         "Senior:\n"
-                        "15-25 Questions\n\n"
+                        "7-9 Questions\n\n"
                         "Leadership:\n"
-                        "18-30 Questions\n\n"
-                        "Never generate a fixed number.\n\n"
+                        "8-10 Questions\n\n"
+                        "Never generate a fixed number. Keep descriptions very concise.\n\n"
                         "--------------------------------------------------\n"
                         "MANDATORY INTERVIEW SECTIONS\n"
                         "--------------------------------------------------\n\n"
@@ -493,8 +506,16 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                         "  \"input_format\": \"...\",\n"
                         "  \"output_format\": \"...\",\n"
                         "  \"constraints\": \"...\",\n"
-                        "  \"sample_input\": \"...\",\n"
-                        "  \"sample_output\": \"...\",\n"
+                        "  \"starter_code\": {\n"
+                        "    \"python\": \"def solve(...):\\n    pass\",\n"
+                        "    \"javascript\": \"function solve(...) {\\n    \\n}\"\n"
+                        "  },\n"
+                        "  \"visible_test_cases\": [\n"
+                        "    {\"input\": \"...\", \"python_test\": \"print(solve(...))\", \"javascript_test\": \"console.log(solve(...));\", \"expected_output\": \"...\"}\n"
+                        "  ],\n"
+                        "  \"hidden_test_cases\": [\n"
+                        "    {\"input\": \"...\", \"python_test\": \"print(solve(...))\", \"javascript_test\": \"console.log(solve(...));\", \"expected_output\": \"...\"}\n"
+                        "  ],\n"
                         "  \"expected_approach\": \"...\",\n"
                         "  \"difficulty\": \"Easy/Medium/Hard\"\n"
                         "}\n\n"
@@ -607,7 +628,7 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                         "}"
                     )
         
-        chat = groq_client.chat.completions.create(
+        chat = await groq_client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
@@ -627,6 +648,7 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.7,
+            max_tokens=6500,
             response_format={"type": "json_object"}
         )
         result = json.loads(chat.choices[0].message.content)
@@ -677,7 +699,7 @@ async def create_interview(
 
     candidate = db.query(models.User).filter(models.User.email == candidate_email, models.User.role == "candidate").first()
     if not candidate:
-        return templates.TemplateResponse(request, "dashboard.html", {"user": recruiter, "interviews": [], "error": "Candidate not found!"})
+        return RedirectResponse(url="/dashboard?msg=Candidate+not+found", status_code=status.HTTP_303_SEE_OTHER)
 
     questions_list = []
     resume_text = ""
@@ -911,7 +933,7 @@ async def complete_interview(interview_id: int, db: Session = Depends(database.g
         proctoring_context += "\n\nIMPORTANT: Consider these violations in your evaluation. Technical accuracy remains important, but suspicious behavior should be factored into the final result (e.g. recommend MANUAL_REVIEW or FAIL if violations are significant)."
 
     try:
-        chat_completion = groq_client.chat.completions.create(
+        chat_completion = await groq_client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
@@ -1308,3 +1330,105 @@ async def create_admin(
     db.add(admin_user)
     db.commit()
     return RedirectResponse(url="/login?msg=Admin+account+created", status_code=303)
+
+@app.post("/interview/{interview_id}/execute")
+async def execute_code(
+    interview_id: int, 
+    request: Request, 
+    db: Session = Depends(database.get_db)
+):
+    data = await request.json()
+    code = data.get("code", "")
+    language = data.get("language", "python")
+    q_idx = data.get("question_index", 0)
+    is_submit = data.get("is_submit", False)
+
+    if not code:
+        return {"status": "error", "msg": "No code provided"}
+
+    interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
+    if not interview:
+        return {"status": "error", "msg": "Interview not found"}
+
+    try:
+        questions = json.loads(interview.questions) if interview.questions else []
+        if q_idx < 0 or q_idx >= len(questions):
+            return {"status": "error", "msg": "Invalid question index"}
+        
+        q = questions[q_idx]
+        if not isinstance(q, dict) or (q.get("type") != "dsa" and not q.get("visible_test_cases")):
+            return {"status": "error", "msg": "Not a valid DSA question format"}
+            
+        vis_cases = q.get("visible_test_cases", [])
+        hid_cases = q.get("hidden_test_cases", []) if is_submit else []
+        test_cases = vis_cases + hid_cases
+
+        if not test_cases:
+            return {"status": "error", "msg": "No test cases found for this question"}
+
+        import subprocess
+        import tempfile
+        import sys
+        
+        passed_all = True
+        final_output = ""
+
+        for idx, tc in enumerate(test_cases):
+            tc_test_code = tc.get(f"{language}_test", "")
+            if not tc_test_code:
+                tc_test_code = tc.get("input", "")
+                
+            full_code = code + "\n\n" + tc_test_code
+            
+            ext = ".py" if language == "python" else ".js"
+            cmd = [sys.executable] if language == "python" else ["node"]
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix=ext, delete=False) as f:
+                f.write(full_code)
+                tmp_path = f.name
+                
+            try:
+                cmd.append(tmp_path)
+                # Run the code safely with a 5-second timeout
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=5.0)
+                stdout = result.stdout.strip()
+                stderr = result.stderr.strip()
+                return_code = result.returncode
+            except subprocess.TimeoutExpired:
+                stdout = ""
+                stderr = "Execution timed out (5s limit exceeded). Infinite loop or heavy computation."
+                return_code = 124
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            
+            is_hidden = idx >= len(vis_cases)
+            tc_label = "Hidden" if is_hidden else "Visible"
+            
+            if return_code != 0 or stderr:
+                passed_all = False
+                final_output += f"Test Case {idx+1} ({tc_label}) FAILED\n"
+                final_output += f"Error:\n{stderr}\n\n"
+                break
+                
+            expected = str(tc.get("expected_output", tc.get("output", ""))).strip()
+            if stdout == expected:
+                final_output += f"Test Case {idx+1} ({tc_label}) PASSED\n"
+            else:
+                passed_all = False
+                final_output += f"Test Case {idx+1} ({tc_label}) FAILED\n"
+                if not is_hidden:
+                    final_output += f"Expected: {expected}\nGot: {stdout}\n\n"
+                else:
+                    final_output += f"Hidden test case failed.\n\n"
+                break
+
+        return {
+            "status": "success",
+            "passed": passed_all,
+            "output": final_output.strip()
+        }
+
+    except Exception as e:
+        print(f"Code Execution Error: {e}")
+        return {"status": "error", "msg": str(e)}
