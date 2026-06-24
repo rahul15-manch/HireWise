@@ -1094,6 +1094,14 @@
                     <label for="provideHints" style="margin: 0;">Provide Hints to Candidate (Side Tab)</label>
                 </div>
 
+                <div id="aiInputs" style="display: block; margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>Custom AI Prompt <span style="font-weight: 400; color: var(--text-muted);">(Optional)</span></label>
+                        <textarea name="custom_prompt" placeholder="Provide instructions for the AI on question style, topics, difficulty, number of questions, etc. Leave blank to use default settings."
+                            style="height: 80px; font-size: 0.9rem;"></textarea>
+                    </div>
+                </div>
+
                 <div id="manualInputs"
                     style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
                     <div class="form-group">
@@ -1137,8 +1145,10 @@
 
         function toggleManualInputs(checked) {
             const manualInputs = document.getElementById('manualInputs');
+            const aiInputs = document.getElementById('aiInputs');
             const hintsGroup = document.getElementById('hintsGroup');
             manualInputs.style.display = checked ? 'none' : 'block';
+            if (aiInputs) aiInputs.style.display = checked ? 'block' : 'none';
             if (hintsGroup) {
                 hintsGroup.style.display = checked ? 'flex' : 'none';
             }

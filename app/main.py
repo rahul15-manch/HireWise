@@ -377,13 +377,36 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None, provide_hints: bool = False):
+async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str = None, provide_hints: bool = False, custom_prompt: str = None):
     try:
-        chat = groq_client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
+        if custom_prompt and custom_prompt.strip():
+            system_content = (
+                "You are HireWise Interview Intelligence Engine.\n\n"
+                "The recruiter has provided CUSTOM INSTRUCTIONS for this interview. You MUST follow them strictly and design the interview exactly as requested below:\n\n"
+                f"--- RECRUITER INSTRUCTIONS ---\n"
+                f"{custom_prompt}\n"
+                f"------------------------------\n\n"
+                "--------------------------------------------------\n"
+                "OUTPUT FORMAT\n"
+                "--------------------------------------------------\n\n"
+                "Return ONLY valid JSON.\n\n"
+                "{\n"
+                "  \"candidate_summary\": \"...\",\n"
+                "  \"recommended_question_count\": 14,\n"
+                "  \"interview_sections\": [\n"
+                "    {\n"
+                "      \"section\": \"Candidate Discovery\",\n"
+                "      \"questions\": [...]\n"
+                "    },\n"
+                "    {\n"
+                "      \"section\": \"Technical Assessment\",\n"
+                "      \"questions\": [...]\n"
+                "    }\n"
+                "  ]\n"
+                "}"
+            )
+        else:
+            system_content = (
                         "You are HireWise Interview Intelligence Engine.\n\n"
                         "You are a world-class interviewer trained on hiring practices from FAANG companies, startups, enterprise organizations, consulting firms, product companies, sales organizations, and HR leadership teams.\n\n"
                         "Your job is NOT merely to generate interview questions.\n\n"
@@ -583,6 +606,12 @@ async def generate_ai_questions(job_role: str, difficulty: str, resume_text: str
                         "  ]\n"
                         "}"
                     )
+        
+        chat = groq_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_content
                 },
                 {
                     "role": "user",
@@ -635,6 +664,7 @@ async def create_interview(
     generate_ai: bool = Form(False),
     provide_hints: bool = Form(False),
     manual_questions: str = Form(None),
+    custom_prompt: str = Form(None),
     pdf_file: UploadFile = File(None),
     resume_file: UploadFile = File(None),
     db: Session = Depends(database.get_db)
@@ -672,7 +702,7 @@ async def create_interview(
             print(f"Resume Extraction Error: {e}")
 
     if generate_ai:
-        questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty, resume_text, provide_hints)
+        questions_list, candidate_summary = await generate_ai_questions(job_role, difficulty, resume_text, provide_hints, custom_prompt)
 
     elif manual_questions:
         questions_list = [q.strip() for q in manual_questions.split('\n') if q.strip()]
