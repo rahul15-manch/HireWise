@@ -1185,11 +1185,15 @@
             }
         }
 
+        let chunkIndex = 0;
+        let uploadPromises = [];
+
         function startVideoRecording() {
             const stream = permStream || proctoringStream;
             if (!stream || !window.MediaRecorder) return;
 
-            recordedChunks = [];
+            chunkIndex = 0;
+            uploadPromises = [];
             const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
                 ? 'video/webm;codecs=vp9' : 'video/webm';
 
@@ -1201,31 +1205,34 @@
             }
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+                if (e.data && e.data.size > 0) {
+                    const idx = chunkIndex++;
+                    uploadPromises.push(uploadChunk(e.data, idx));
+                }
             };
 
-            mediaRecorder.onstop = () => {
-                uploadRecording();
+            mediaRecorder.onstop = async () => {
+                await Promise.all(uploadPromises);
+                console.log('[RECORDING] All chunks uploaded');
             };
 
             mediaRecorder.start(5000); // collect chunks every 5s
             console.log('[RECORDING] Started recording interview video');
         }
 
-        async function uploadRecording() {
-            if (recordedChunks.length === 0) return;
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        async function uploadChunk(blob, index) {
             const formData = new FormData();
-            formData.append('file', blob, 'recording.webm');
+            formData.append('chunk', blob, `chunk_${index}.webm`);
+            formData.append('chunk_index', index);
             try {
-                const res = await fetch(`/interview/${interviewId}/upload-recording`, {
+                const res = await fetch(`/interview/${interviewId}/upload-chunk`, {
                     method: 'POST',
                     body: formData
                 });
                 const data = await res.json();
-                console.log('[RECORDING] Uploaded:', data.filename);
+                console.log('[RECORDING] Uploaded chunk:', index);
             } catch (e) {
-                console.error('[RECORDING] Upload failed:', e);
+                console.error('[RECORDING] Chunk upload failed:', e);
             }
         }
 

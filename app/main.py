@@ -4,7 +4,7 @@ import uuid
 import base64
 import json
 from pypdf import PdfReader
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -981,29 +981,45 @@ async def flag_cheat(interview_id: int, request: Request, db: Session = Depends(
     return {"status": "logged", "auto_failed": auto_fail}
 
 
-@app.post("/interview/{interview_id}/upload-recording")
-async def upload_recording(interview_id: int, file: UploadFile = File(...), db: Session = Depends(database.get_db)):
-    """Receive the candidate's interview video recording and save it."""
+@app.post("/interview/{interview_id}/upload-chunk")
+async def upload_chunk(
+    interview_id: int, 
+    chunk: UploadFile = File(...), 
+    chunk_index: int = Form(...), 
+    db: Session = Depends(database.get_db)
+):
+    """Receive a video chunk from the candidate and save it to the database."""
     interview = db.query(models.Interview).filter(models.Interview.id == interview_id).first()
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    # Save to app/static/recordings/
-    recordings_dir = os.path.join(os.path.dirname(__file__), "static", "recordings")
-    os.makedirs(recordings_dir, exist_ok=True)
+    contents = await chunk.read()
+    video_chunk = models.VideoChunk(
+        interview_id=interview_id,
+        chunk_index=chunk_index,
+        data=contents
+    )
+    db.add(video_chunk)
 
-    ext = ".webm"  # MediaRecorder default in Chrome
-    filename = f"{uuid.uuid4()}{ext}"
-    file_path = os.path.join(recordings_dir, filename)
+    if not interview.recording_file:
+        interview.recording_file = "db_stored"
 
-    contents = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(contents)
-
-    interview.recording_file = filename
     db.commit()
-    print(f"[RECORDING] Interview {interview_id} recording saved: {filename} ({len(contents)//1024}KB)")
-    return {"status": "saved", "filename": filename}
+    return {"status": "saved", "chunk_index": chunk_index}
+
+@app.get("/interview/{interview_id}/video")
+async def get_video(interview_id: int, db: Session = Depends(database.get_db)):
+    """Stream the video recording from chunks stored in the database."""
+    chunks = db.query(models.VideoChunk).filter(models.VideoChunk.interview_id == interview_id).order_by(models.VideoChunk.chunk_index).all()
+    
+    if not chunks:
+        raise HTTPException(status_code=404, detail="Recording not found")
+
+    def iterfile():
+        for chunk in chunks:
+            yield chunk.data
+
+    return StreamingResponse(iterfile(), media_type="video/webm")
 
 @app.post("/interview/{interview_id}/publish")
 async def publish_interview_result(request: Request, interview_id: int, db: Session = Depends(database.get_db)):
@@ -1206,6 +1222,10 @@ async def admin_delete_user(user_id: int, request: Request, db: Session = Depend
                     print(f"[ADMIN] Deleted recording: {iv.recording_file}")
                 except Exception as e:
                     print(f"[ADMIN] Failed to delete recording {iv.recording_file}: {e}")
+            
+            # delete associated video chunks from DB
+            db.query(models.VideoChunk).filter(models.VideoChunk.interview_id == iv.id).delete()
+            
         db.delete(iv)
 
     # Delete associated templates

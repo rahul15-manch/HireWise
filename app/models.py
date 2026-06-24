@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -51,3 +51,12 @@ class QuestionTemplate(Base):
 
     recruiter = relationship("User", foreign_keys=[recruiter_id])
 
+class VideoChunk(Base):
+    __tablename__ = "video_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interview_id = Column(Integer, ForeignKey("interviews.id"))
+    chunk_index = Column(Integer)
+    data = Column(LargeBinary)
+
+    interview = relationship("Interview", foreign_keys=[interview_id])
