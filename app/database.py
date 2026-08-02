@@ -7,7 +7,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def robust_fix_url(url):
-    if not url or url.startswith("sqlite"):
+    if not url:
+        return url
+        
+    url = url.strip()
+    
+    if url.startswith("sqlite"):
         return url
     
     # Fix 'postgres://' which SQLAlchemy 1.4+ doesn't like
