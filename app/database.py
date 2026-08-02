@@ -17,7 +17,7 @@ def robust_fix_url(url):
     # Handle special characters in password (like #, !, %)
     # Standard urlparse can fail if the password contains '#'
     try:
-        from urllib.parse import quote_plus
+        from urllib.parse import quote_plus, unquote
         if "://" in url and "@" in url:
             scheme, rest = url.split("://", 1)
             # Split from the right to handle '@' in passwords if any (though rare)
@@ -25,8 +25,10 @@ def robust_fix_url(url):
             auth, host_path = rest.rsplit("@", 1)
             if ":" in auth:
                 user, password = auth.split(":", 1)
+                # Decode first in case it's already encoded, then encode
+                decoded_password = unquote(password)
                 # Reconstruct with encoded password
-                url = f"{scheme}://{user}:{quote_plus(password)}@{host_path}"
+                url = f"{scheme}://{user}:{quote_plus(decoded_password)}@{host_path}"
     except Exception as e:
         print(f"URL encoding warning: {e}")
     
