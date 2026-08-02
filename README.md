@@ -11,7 +11,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 [![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F54B27?style=for-the-badge&logo=meta&logoColor=white)](https://groq.com)
 [![Gemini](https://img.shields.io/badge/Google-Gemini_1.5-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://hirewise-81z1.onrender.com)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://hire-wise-xi.vercel.app/)
 
 </div>
 
